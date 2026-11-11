@@ -1,0 +1,7 @@
+# Backend runtime artifacts (never committed)
+backend/drafts/
+backend/__pycache__/
+__pycache__/
+*.pyc
+backend/*.log
+.venv/

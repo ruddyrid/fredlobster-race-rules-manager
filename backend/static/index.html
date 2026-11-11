@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fred Lobster Race Rules 2027 — Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Fred Lobster Race Rules 2027 <span class="tag">admin</span></h1>
+    <div class="actions">
+      <button id="btn-publish" class="primary">Publish to live site</button>
+      <button id="btn-rollback" class="danger">Rollback last publish</button>
+    </div>
+  </header>
+
+  <div id="status" class="status">loading status…</div>
+
+  <main>
+    <aside>
+      <h2>Sections</h2>
+      <ul id="sections"></ul>
+    </aside>
+
+    <section class="panel">
+      <div class="tabs">
+        <button class="tab active" data-tab="editor">Editor</button>
+        <button class="tab" data-tab="diff">Diff</button>
+        <button class="tab" data-tab="log">Result</button>
+      </div>
+
+      <div id="tab-editor" class="tabpanel">
+        <div id="draft-banner" class="banner hidden">
+          <strong>DRAFT</strong> — saved on the backend only. The public site will not change until you publish.
+        </div>
+        <div class="editor-head">
+          <div>
+            <strong id="editor-title">Select a section</strong>
+            <span id="editor-path" class="muted"></span>
+          </div>
+          <div>
+            <span id="editor-hint" class="muted"></span>
+            <button id="btn-save" disabled>Save draft</button>
+          </div>
+        </div>
+        <textarea id="editor" spellcheck="false" placeholder="Choose a section on the left to edit its Markdown."></textarea>
+      </div>
+
+      <div id="tab-diff" class="tabpanel hidden">
+        <div class="editor-head">
+          <div><strong>Draft vs published</strong> <span class="muted">nothing is live until you publish</span></div>
+          <button id="btn-refresh-diff" class="secondary">Refresh</button>
+        </div>
+        <pre id="diff" class="output">no drafts yet</pre>
+      </div>
+
+      <div id="tab-log" class="tabpanel hidden">
+        <pre id="log" class="output">Nothing run yet. Publish and rollback results appear here.</pre>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

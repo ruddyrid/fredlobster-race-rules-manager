@@ -1,0 +1,10 @@
+#!/bin/sh
+# Launcher for the fred terminal client (stdlib Python only).
+# Usage: ./fred/fred status   — or put fred/ on PATH (see fred/README.md).
+set -e
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+root=$(dirname "$here")
+if [ -x "$root/.venv/bin/python" ]; then
+  exec "$root/.venv/bin/python" "$here/fred.py" "$@"
+fi
+exec python3 "$here/fred.py" "$@"
