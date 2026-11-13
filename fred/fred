@@ -1,8 +1,17 @@
 #!/bin/sh
 # Launcher for the fred terminal client (stdlib Python only).
-# Usage: ./fred/fred status   — or put fred/ on PATH (see fred/README.md).
+# Usage: fred status   — from any directory, once ~/.local/bin/fred exists.
 set -e
-here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# Follow symlinks so ~/.local/bin/fred still finds fred.py beside this file.
+source=$0
+while [ -L "$source" ]; do
+  dest=$(readlink -- "$source") || exit 1
+  case $dest in
+    /*) source=$dest ;;
+    *) source=$(CDPATH= cd -- "$(dirname -- "$source")" && pwd)/$dest ;;
+  esac
+done
+here=$(CDPATH= cd -- "$(dirname -- "$source")" && pwd)
 root=$(dirname "$here")
 if [ -x "$root/.venv/bin/python" ]; then
   exec "$root/.venv/bin/python" "$here/fred.py" "$@"

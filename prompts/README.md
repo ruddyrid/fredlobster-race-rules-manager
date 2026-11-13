@@ -38,5 +38,5 @@ Guiding decisions already settled:
 - The project name is **Fred Lobster**; directory `fredlobster-race-rules-2027`, display
   title **Fred Lobster Race Rules 2027**. The earlier misspelled variant of this name is
   retired and must not reappear anywhere — directory, file, or page.
-- Deploys target the `race-rulebook` GitHub repo only.
+- Deploys target the `ruddyrid/fredlobster-race-rules-2027` GitHub repo only.
 - Never print, log, or store secrets.

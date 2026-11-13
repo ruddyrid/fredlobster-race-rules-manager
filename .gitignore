@@ -1,5 +1,7 @@
 # Backend runtime artifacts (never committed)
 backend/drafts/
+backend/workspaces.json
+backend/*.tmp
 backend/__pycache__/
 __pycache__/
 *.pyc

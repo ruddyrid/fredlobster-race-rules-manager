@@ -1,0 +1,9 @@
+# MkDocs toolchain used by the backend to validate and build any rules
+# workspace. Workbooks normally have their own .venv; this is the fallback so
+# newly created workspaces can build before their first `pip install`.
+mkdocs==1.6.1
+mkdocs-material==9.6.14
+pymdown-extensions==10.14.1
+mkdocs-print-site-plugin==2.9
+markdown-include==0.8.1
+mkdocs-include-markdown-plugin==7.3.1

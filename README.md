@@ -3,8 +3,8 @@
 Management tooling for the **Fred Lobster Race Rules 2027**. The rules themselves are
 **not** in this repo — they live in the rulebook repo:
 
-- Rulebook content: https://github.com/ruddyrid/race-rulebook
-- Public site (read-only): https://ruddyrid.github.io/race-rulebook/
+- Rulebook content: https://github.com/ruddyrid/fredlobster-race-rules-2027
+- Public site (read-only): https://ruddyrid.github.io/fredlobster-race-rules-2027/
 
 This repo holds the machinery that edits, validates, publishes and rolls back that
 rulebook. Markdown in git stays the single source of truth; nothing here is published.

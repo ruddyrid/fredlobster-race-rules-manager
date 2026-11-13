@@ -1,7 +1,7 @@
 # Backend — Fred Lobster Race Rules 2027
 
 Small FastAPI service that is the **single writer** for the rule Markdown files in the
-rulebook repo (https://github.com/ruddyrid/race-rulebook). No database: the Markdown
+rulebook repo (https://github.com/ruddyrid/fredlobster-race-rules-2027). No database: the Markdown
 files and git are the storage. This code lives in the manager repo; the content lives
 in the rulebook working copy, `~/fredlobster-race-rules-2027`, found via `FL_REPO`.
 

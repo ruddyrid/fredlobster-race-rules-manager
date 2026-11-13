@@ -7,18 +7,18 @@ One page. Everything you need to run the rulebook day to day.
 | Thing | Where |
 |---|---|
 | The rulebook (the real copy) | `~/fredlobster-race-rules-2027` — the Markdown in `docs/` is the single source of truth |
-| GitHub repo (rules) | https://github.com/ruddyrid/race-rulebook (`main` = source, `gh-pages` = the built site) |
-| Public site | https://ruddyrid.github.io/race-rulebook/ — read-only |
+| GitHub repo (rules) | https://github.com/ruddyrid/fredlobster-race-rules-2027 (`main` = source, `gh-pages` = the built site) |
+| Public site | https://ruddyrid.github.io/fredlobster-race-rules-2027/ — read-only |
 | Management tooling | `~/fredlobster-race-rules-manager` — backend, `fred`, admin GUI, these notes, prompts (https://github.com/ruddyrid/fredlobster-race-rules-manager) |
 | Backend service | `fredlobster-backend` (user service, port 8100, binds the Tailscale IP `100.108.5.126`, runs from `~/fredlobster-race-rules-manager`) |
-| `fred` (terminal) | `~/fredlobster-race-rules-manager/fred/fred` — put `fred/` on PATH or call by path |
+| `fred` (terminal) | `fred` from any directory, including `~/`. Link: `~/.local/bin/fred` → `~/fredlobster-race-rules-manager/fred/fred` |
 | Admin GUI | http://100.108.5.126:8100/ui/ — tailnet only |
 | Prompt runbook | `prompts/` in the manager repo; the plan itself lives in the Muse space |
 
 The backend is told where the rulebook is by `FL_REPO` in
 `~/.config/systemd/user/fredlobster-backend.service` (currently
-`/home/ruddyrid/fredlobster-race-rules-2027`). The pristine clone at `~/race-rulebook`
-is a spare copy — never edit it.
+`/home/ruddyrid/fredlobster-race-rules-2027`). The old 2026 clone at `~/race-rulebook`
+is a spare copy of the previous season — never edit it.
 
 ## Publishing a rule change
 
