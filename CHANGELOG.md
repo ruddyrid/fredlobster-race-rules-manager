@@ -3,7 +3,17 @@
 All notable changes to this tooling repo are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-When GitHub Pages activation is approved, it will be recorded as a follow-up entry.
+
+## 2026-11-13 — follow-up
+
+### Added
+
+- GitHub Pages for the manager repo is live (serving `main` root): site index [README.md](https://ruddyrid.github.io/fredlobster-race-rules-manager/README.md), public demo at https://ruddyrid.github.io/fredlobster-race-rules-manager/demo/, and quick starts under `/docs/*.md`. Verified by QA: demo and both guide links return 200 and the demo's relative guide links resolve.
+- `.nojekyll` so Pages serves the repo as static files; without it the legacy Jekyll build stalled. Site root `/` intentionally has no index page (the demo and docs are the entry points).
+
+### Changed
+
+- README's "public demo" link now resolves — no longer dead pending activation.
 
 ## 2026-11-13
 
