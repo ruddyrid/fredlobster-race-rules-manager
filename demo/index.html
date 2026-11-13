@@ -1,0 +1,1370 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Race Rules Manager — Admin (sample)</title>
+  <style>
+:root {
+  color-scheme: dark;
+
+  --bg: #12151c;
+  --panel: #1a1f29;
+  --panel-2: #232936;
+  --text: #e8e6e0;
+  --muted: #9aa3b2;
+  --accent: #e63a2e;
+  --accent-2: #f5a524;
+  --ok: #3fb950;
+  --warn: #d29922;
+  --line: #2f3644;
+
+  --header-bg: #fff;
+  --header-text: #1a1f2e;
+  --header-border: #1a1f2e;
+  --code-bg: #0f1218;
+  --banner-bg: #3a2a12;
+  --banner-text: #ffd98a;
+  --banner-line: #f5a524;
+  --add: #3fb950;
+  --del: #ff7b72;
+  --hunk: #79c0ff;
+  --backdrop: rgba(0, 0, 0, 0.58);
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f3f1ec;
+  --panel: #ffffff;
+  --panel-2: #ece8e0;
+  --text: #1b2430;
+  --muted: #5d6a79;
+  --accent: #b52b22;
+  --accent-2: #825500;
+  --ok: #176b32;
+  --warn: #825500;
+  --line: #d5d0c6;
+
+  --header-bg: #fff;
+  --header-text: #1a1f2e;
+  --header-border: #1a1f2e;
+  --code-bg: #fbfaf7;
+  --banner-bg: #fff4d6;
+  --banner-text: #6b4a00;
+  --banner-line: #d9a300;
+  --add: #1a7f37;
+  --del: #cf222e;
+  --hunk: #0550ae;
+  --backdrop: rgba(20, 24, 30, 0.42);
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.18);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font: 14px/1.45 -apple-system, "Segoe UI", Roboto, "Hanken Grotesk", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* demo-only warning strip */
+.demo-banner {
+  background: var(--accent);
+  color: #fff;
+  text-align: center;
+  padding: 0.45rem 0.75rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  border-bottom: 2px solid #7a1d16;
+  flex-shrink: 0;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  background: var(--header-bg);
+  color: var(--header-text);
+  border-bottom: 3px solid var(--header-border);
+}
+
+.brand { min-width: 0; }
+header h1 { font-size: 1rem; margin: 0; text-transform: uppercase; letter-spacing: 0.04em; }
+.brand-sub {
+  display: block;
+  max-width: 52vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #5c6678;
+  font-size: 0.78rem;
+}
+.tag {
+  font-size: 0.68rem;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-left: 0.4rem;
+}
+.tag.demo { background: var(--accent-2); color: #1a1f2e; }
+
+.actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
+
+button {
+  font: inherit;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.danger { background: transparent; border-color: var(--accent); color: var(--accent); }
+button.secondary { background: transparent; }
+header button.secondary { background: #fff; color: #1a1f2e; border-color: #c9cbd2; }
+header button.secondary:hover { border-color: var(--accent); }
+header #btn-theme {
+  background: #1a1f2e;
+  color: #fff;
+  border-color: #1a1f2e;
+  font-weight: 600;
+}
+header #btn-theme:hover:not(:disabled) { background: #2c3548; border-color: var(--accent); }
+header #btn-theme:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button.icon {
+  border: none;
+  background: transparent;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0.15rem 0.4rem;
+}
+button.link {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  padding: 0.2rem 0.35rem;
+}
+button.link:hover { text-decoration: underline; }
+
+.status {
+  padding: 0.5rem 1rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+.pill {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+}
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.pill.warn { color: var(--warn); border-color: var(--warn); }
+.pill.workspace { color: var(--accent-2); border-color: var(--accent-2); }
+
+main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  min-height: 0;
+}
+
+aside {
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+  overflow-y: auto;
+  padding: 0.75rem;
+}
+aside h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 0.5rem; }
+#sections { list-style: none; margin: 0; padding: 0; }
+#sections li {
+  padding: 0.45rem 0.55rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+#sections li:hover { background: var(--panel-2); }
+#sections li.active { border-color: var(--accent); background: var(--panel-2); }
+#sections .s-title { display: block; font-weight: 600; }
+#sections .s-path { display: block; font-size: 0.75rem; color: var(--muted); font-family: ui-monospace, monospace; }
+#sections .dot { color: var(--accent-2); font-weight: 700; }
+
+.panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+
+.tabs { display: flex; gap: 0.25rem; padding: 0.5rem 0.75rem 0; border-bottom: 1px solid var(--line); }
+.tab { border: none; background: transparent; color: var(--muted); border-bottom: 2px solid transparent; border-radius: 0; }
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+.tabpanel { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 0.75rem; }
+.tabpanel.hidden { display: none; }
+
+.banner {
+  background: var(--banner-bg);
+  border: 1px solid var(--banner-line);
+  color: var(--banner-text);
+  padding: 0.5rem 0.7rem;
+  border-radius: 4px;
+  margin-bottom: 0.6rem;
+  font-size: 0.85rem;
+}
+.banner.hidden { display: none; }
+
+.editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.muted { color: var(--muted); font-weight: 400; font-size: 0.85rem; }
+.hint { color: var(--muted); font-size: 0.78rem; margin: 0.35rem 0 0; }
+.hint code { font-family: ui-monospace, monospace; }
+
+#editor {
+  flex: 1;
+  width: 100%;
+  resize: none;
+  background: var(--code-bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.75rem;
+  font: 13px/1.5 ui-monospace, "Spline Sans Mono", monospace;
+}
+
+.output {
+  flex: 1;
+  overflow: auto;
+  margin: 0;
+  padding: 0.75rem;
+  background: var(--code-bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font: 12.5px/1.45 ui-monospace, monospace;
+  white-space: pre-wrap;
+}
+.add { color: var(--add); }
+.del { color: var(--del); }
+.hunk { color: var(--hunk); }
+.ctx { color: var(--muted); }
+.meta { color: var(--muted); }
+.step-ok { color: var(--ok); }
+.step-fail { color: var(--del); }
+
+/* --------------------------------------------------------------- workspaces modal */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--backdrop);
+}
+.modal.hidden { display: none; }
+
+.modal-card {
+  width: min(860px, 96vw);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem 0.8rem;
+  border-bottom: 1px solid var(--line);
+}
+.modal-head h2 { margin: 0 0 0.2rem; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.modal-body { overflow-y: auto; padding: 1rem 1.1rem 1.3rem; }
+
+.ws-section { padding: 0.9rem 0; border-bottom: 1px solid var(--line); }
+.ws-section:last-child { border-bottom: none; padding-bottom: 0; }
+.ws-section h3 { margin: 0 0 0.6rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.ws-section a { color: var(--accent); }
+.guide-links { margin: 0.4rem 0 0; padding-left: 1.1rem; display: grid; gap: 0.3rem; font-size: 0.85rem; }
+
+.ws-current {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.3rem;
+}
+.ws-current .ws-title { font-weight: 700; }
+.ws-current .ws-path { font-family: ui-monospace, monospace; font-size: 0.8rem; color: var(--muted); word-break: break-all; }
+.ws-current .ws-meta { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.25rem; }
+
+.ws-list { display: grid; gap: 0.45rem; }
+.ws-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+}
+.ws-item.active { border-color: var(--accent); }
+.ws-item .ws-item-main { min-width: 0; }
+.ws-item .ws-item-title { font-weight: 600; }
+.ws-item .ws-item-path, .ws-item .ws-item-meta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-family: ui-monospace, monospace;
+}
+.ws-item .ws-item-meta { font-family: inherit; }
+.ws-item .ws-item-actions { display: flex; flex-shrink: 0; gap: 0.35rem; }
+.badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+.ws-list.compact .ws-item { padding: 0.45rem 0.55rem; }
+
+.inline-form { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+.inline-form input { flex: 1; }
+
+.stack { display: grid; gap: 0.65rem; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
+label { display: grid; gap: 0.25rem; font-size: 0.8rem; color: var(--muted); }
+label.check { display: flex; align-items: center; gap: 0.45rem; color: var(--text); }
+input, select {
+  font: inherit;
+  padding: 0.42rem 0.55rem;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--code-bg);
+  color: var(--text);
+  min-width: 0;
+}
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.form-actions { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.hidden { display: none !important; }
+
+/* ------------------------------------------------------------------ toast */
+
+.toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 80;
+  max-width: min(520px, 92vw);
+  padding: 0.65rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  font-size: 0.85rem;
+}
+.toast.ok { border-color: var(--ok); }
+.toast.warn { border-color: var(--warn); }
+.toast.hidden { display: none; }
+
+@media (max-width: 900px) {
+  header { flex-direction: column; align-items: stretch; }
+  .actions { justify-content: flex-start; }
+  .brand-sub { max-width: 90vw; }
+  main { grid-template-columns: 1fr; }
+  aside { max-height: 30vh; border-right: none; border-bottom: 1px solid var(--line); }
+  .row { grid-template-columns: 1fr; }
+}
+  </style>
+</head>
+<body>
+  <div class="demo-banner">Sample admin GUI — demo data only, nothing here changes the live rules.</div>
+
+  <header>
+    <div class="brand">
+      <h1 id="app-title">Race Rules Manager <span class="tag">admin</span><span class="tag demo">DEMO</span></h1>
+      <span id="app-workspace" class="brand-sub"></span>
+    </div>
+    <div class="actions">
+      <button id="btn-workspaces" class="secondary">Workspaces</button>
+      <button id="btn-theme" class="secondary" type="button" title="Switch to light mode" aria-label="Switch to light mode">☀ Light</button>
+      <button id="btn-publish" class="primary">Publish to live site</button>
+      <button id="btn-rollback" class="danger">Rollback last publish</button>
+    </div>
+  </header>
+
+  <div id="status" class="status"></div>
+
+  <main>
+    <aside>
+      <h2>Sections</h2>
+      <ul id="sections"></ul>
+    </aside>
+
+    <section class="panel">
+      <div class="tabs">
+        <button class="tab active" data-tab="editor">Editor</button>
+        <button class="tab" data-tab="diff">Diff</button>
+        <button class="tab" data-tab="log">Result</button>
+      </div>
+
+      <div id="tab-editor" class="tabpanel">
+        <div id="draft-banner" class="banner hidden">
+          <strong>DRAFT</strong> — saved in this page only. Nothing here can reach a live site.
+        </div>
+        <div class="editor-head">
+          <div>
+            <strong id="editor-title">Select a section</strong>
+            <span id="editor-path" class="muted"></span>
+          </div>
+          <div>
+            <span id="editor-hint" class="muted"></span>
+            <button id="btn-save" disabled>Save draft</button>
+          </div>
+        </div>
+        <textarea id="editor" spellcheck="false" placeholder="Choose a section on the left to edit its Markdown."></textarea>
+      </div>
+
+      <div id="tab-diff" class="tabpanel hidden">
+        <div class="editor-head">
+          <div><strong>Draft vs published</strong> <span class="muted">computed in this page, from sample data</span></div>
+          <button id="btn-refresh-diff" class="secondary">Refresh</button>
+        </div>
+        <pre id="diff" class="output">no drafts yet</pre>
+      </div>
+
+      <div id="tab-log" class="tabpanel hidden">
+        <pre id="log" class="output">Nothing run yet. Publish and rollback results appear here.</pre>
+      </div>
+    </section>
+  </main>
+
+  <div id="workspace-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="workspace-modal-title">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 id="workspace-modal-title">Workspaces</h2>
+          <p class="hint">Each workspace is one race rules directory, with its own version and drafts. In this sample, every workspace lives in memory and disappears on reload.</p>
+        </div>
+        <button id="btn-close-workspaces" class="icon" aria-label="Close workspaces">×</button>
+      </div>
+
+      <div class="modal-body">
+        <section class="ws-section">
+          <h3>Current workspace</h3>
+          <div id="ws-current" class="ws-current"></div>
+        </section>
+
+        <section class="ws-section">
+          <h3>Switch workspace</h3>
+          <div id="ws-list" class="ws-list"></div>
+          <form id="ws-add-form" class="inline-form">
+            <input id="ws-add-path" placeholder="~/bramble-bay-rules-2028" autocomplete="off" spellcheck="false">
+            <button type="submit" class="secondary">Add &amp; switch</button>
+          </form>
+          <p class="hint">In this sample, any path is accepted and gets starter sections.</p>
+        </section>
+
+        <section class="ws-section">
+          <h3>Create a new workspace</h3>
+          <form id="ws-create-form" class="stack">
+            <label>Directory
+              <input id="ws-create-path" required autocomplete="off" spellcheck="false">
+            </label>
+            <div class="row">
+              <label>Start from
+                <select id="ws-create-mode">
+                  <option value="blank">Blank template</option>
+                  <option value="copy">Copy an existing workspace</option>
+                </select>
+              </label>
+              <label id="ws-source-wrap" class="hidden">Copy from
+                <select id="ws-create-source"></select>
+              </label>
+            </div>
+            <div class="row">
+              <label>Title
+                <input id="ws-create-title" maxlength="160" autocomplete="off">
+              </label>
+              <label>Year
+                <input id="ws-create-year" type="number" min="2000" max="2100" step="1">
+              </label>
+            </div>
+            <label>Git repo URL <span class="hint">optional, stored only as sample text here</span>
+              <input id="ws-create-repo" placeholder="owner/rules-2028 on your git host" autocomplete="off" spellcheck="false">
+            </label>
+            <label class="check">
+              <input id="ws-create-git" type="checkbox" checked>
+              Initialize git and make the first commit
+            </label>
+            <div class="form-actions">
+              <span id="ws-create-hint" class="hint"></span>
+              <button type="submit" class="primary">Create &amp; switch</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="ws-section">
+          <h3>Remove from list</h3>
+          <p class="hint">This only hides the directory here. Files are never deleted — and in this sample there are no files at all.</p>
+          <div id="ws-forget-list" class="ws-list compact"></div>
+        </section>
+
+        <section class="ws-section">
+          <h3>Guides</h3>
+          <ul class="guide-links">
+            <li><a href="../docs/admin-gui-quickstart.md">Admin GUI quickstart</a></li>
+            <li><a href="../docs/fred-tmux-quickstart.md">fred TMUX quickstart</a></li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script>
+"use strict";
+
+// ------------------------------------------------------------------ sample data
+// Everything below is invented. No requests are made, nothing is stored on disk.
+
+const $ = (id) => document.getElementById(id);
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
+
+function rndHash() {
+  let out = "";
+  const hexa = "0123456789abcdef";
+  for (let i = 0; i < 7; i += 1) out += hexa[Math.floor(Math.random() * 16)];
+  return out;
+}
+
+function countBytes(text) {
+  try { return new TextEncoder().encode(text).length; } catch { return text.length; }
+}
+
+const A_SAFETY = [
+  "# Safety",
+  "",
+  "- Every crewmember wears a life jacket on the water.",
+  "- Helmets are mandatory in the Gale class.",
+  "- Race control aborts the start for lightning within 5 nautical miles.",
+  "- A boat that capsizes must raise a red flag before continuing.",
+  ""
+].join("\n");
+
+const A_CLASSES = [
+  "# Classes",
+  "",
+  "| Class      | Boat            | Crew | Handicap |",
+  "|------------|-----------------|------|----------|",
+  "| Cloudburst | 16 ft sloop     | 2-4  | 1.000    |",
+  "| Paper Kite | 12 ft dinghy    | 1-2  | 1.085    |",
+  "| Gale       | 22 ft keelboat  | 3-5  | 0.940    |",
+  ""
+].join("\n");
+
+const A_PENALTIES = [
+  "# Penalties",
+  "",
+  "- Windward mark touch: one 360-degree turn.",
+  "- Early start: disqualification without hearing.",
+  "- Missing safety check: 6 points off the final series score.",
+  ""
+].join("\n");
+
+const A_TECH_PUB = [
+  "# Technical",
+  "",
+  "## Hull",
+  "- Boats must be class-legal at the pre-series measurement.",
+  "",
+  "## Sails",
+  "- One damaged sail may be replaced between races.",
+  ""
+].join("\n");
+
+const A_TECH_DRAFT = [
+  "# Technical",
+  "",
+  "## Hull",
+  "- Boats must be class-legal at the pre-series measurement.",
+  "- Measurement tags must stay visible from the dock.",
+  "",
+  "## Sails",
+  "- One damaged sail may be replaced between races.",
+  ""
+].join("\n");
+
+const A_QUICKREF = [
+  "# Quick Reference",
+  "",
+  "- First start signal: 1200 daily, five warning minutes.",
+  "- Course: windward-leeward, two laps for dinghies, three for keelboats.",
+  "- Protest time limit: 60 minutes after the last boat finishes.",
+  ""
+].join("\n");
+
+const A_CHANGELOG = [
+  "# Changelog",
+  "",
+  "## 2027.2",
+  "- Added red-flag rule for capsize recovery (safety).",
+  ""
+].join("\n");
+
+function section(id, title, path, published) {
+  return { id, title, path, published };
+}
+
+function blankSections() {
+  return [
+    section("index", "Home", "index.md", "# Welcome\n\nWrite your race overview here.\n"),
+    section("rules-safety", "Safety", "rules/safety.md", "# Safety\n\nList your safety rules here.\n"),
+    section("rules-format", "Format", "rules/format.md", "# Format\n\nDescribe the racing format here.\n"),
+    section("changelog", "Changelog", "changelog.md", "# Changelog\n\nRecord rule changes here.\n")
+  ];
+}
+
+function workspace(id, title, path, sections, opts) {
+  const base = opts || {};
+  return {
+    id,
+    title,
+    path,
+    sections,
+    drafts: base.drafts || {},
+    version: base.version || 1,
+    branch: base.branch !== undefined ? base.branch : "main",
+    head: base.head !== undefined ? base.head : rndHash(),
+    clean: base.clean !== undefined ? base.clean : true,
+    inSync: base.inSync !== undefined ? base.inSync : true,
+    ahead: base.ahead || 0,
+    behind: base.behind || 0,
+    siteUrl: base.siteUrl || "",
+    repoUrl: base.repoUrl || "",
+    history: base.history || []
+  };
+}
+
+const WS = [
+  workspace("bramble-2027", "Bramble Bay Regatta Rules 2027", "~/bramble-bay-rules-2027", [
+    section("quick-reference", "Quick Reference", "quick-reference.md", A_QUICKREF),
+    section("rules-safety", "Safety", "rules/safety.md", A_SAFETY),
+    section("rules-classes", "Classes", "rules/classes.md", A_CLASSES),
+    section("rules-penalties", "Penalties", "rules/penalties.md", A_PENALTIES),
+    section("rules-technical", "Technical", "rules/technical.md", A_TECH_PUB),
+    section("changelog", "Changelog", "changelog.md", A_CHANGELOG)
+  ], {
+    drafts: { "rules-technical": A_TECH_DRAFT },
+    version: 3,
+    siteUrl: "demo.invalid/bramble-bay",
+    repoUrl: "bramble-bay/rules-2027",
+    history: [{
+      publishedMap: {
+        "quick-reference": A_QUICKREF,
+        "rules-safety": A_SAFETY.replace("- Race control aborts the start for lightning within 5 nautical miles.\n", ""),
+        "rules-classes": A_CLASSES,
+        "rules-penalties": A_PENALTIES.replace("- Missing safety check: 6 points off the final series score.\n", ""),
+        "rules-technical": A_TECH_PUB,
+        "changelog": "# Changelog\n"
+      },
+      version: 2,
+      commit: rndHash(),
+      when: "an earlier sample publish"
+    }]
+  }),
+  workspace("reed-2026", "Reedmarsh Sprint Series 2026", "~/reedmarsh-sprint-2026", [
+    section("rules-safety", "Safety", "rules/safety.md", "# Safety\n\n- Buoyant aids required at all times on the marsh.\n"),
+    section("rules-format", "Format", "rules/format.md", "# Format\n\n- Three-boat elimination heats, best-of-five series.\n"),
+    section("changelog", "Changelog", "changelog.md", "# Changelog\n\n## 2026.4\n- Heats shortened to two laps.\n")
+  ], {
+    version: 1,
+    branch: "",
+    head: "",
+    siteUrl: "",
+    repoUrl: "reedmarsh/sprint-2026"
+  })
+];
+
+const SUGGESTED = { path: "~/bramble-bay-rules-2028", title: "Bramble Bay Regatta Rules 2028", year: "2028" };
+
+// ------------------------------------------------------------------ state
+
+const state = {
+  activeId: WS[0].id,
+  currentId: null,   // section id open in the editor
+  content: "",       // saved text of the open section (draft or published)
+  busy: false
+};
+
+let toastTimer = null;
+let pipelineTimer = null;
+
+function activeWs() { return WS.find((w) => w.id === state.activeId) || null; }
+function wsById(id) { return WS.find((w) => w.id === id) || null; }
+function sectionById(ws, id) { return ws.sections.find((s) => s.id === id) || null; }
+function draftOf(ws, id) { return ws.drafts[id] !== undefined ? ws.drafts[id] : null; }
+function isDirty(ws, id) { return draftOf(ws, id) !== null && draftOf(ws, id) !== sectionById(ws, id).published; }
+function dirtyIds(ws) { return ws.sections.filter((s) => isDirty(ws, s.id)).map((s) => s.id); }
+
+function toast(message, kind = "ok") {
+  const box = $("toast");
+  box.textContent = message;
+  box.className = `toast ${kind}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => box.classList.add("hidden"), 4500);
+}
+
+function setBusy(on, label) {
+  state.busy = on;
+  renderStatus(label || null);
+  const ws = activeWs();
+  $("btn-publish").disabled = on || !ws || !dirtyIds(ws).length;
+  $("btn-rollback").disabled = on || !ws || !ws.history.length;
+  $("btn-workspaces").disabled = on;
+  $("btn-save").disabled = on || !sectionById(ws || { sections: [] }, state.currentId);
+}
+
+// ------------------------------------------------------------------ status bar
+
+function renderStatus(extraPill) {
+  const ws = activeWs();
+  const box = $("status");
+  if (!ws) {
+    box.innerHTML = `<span class="pill warn">no active workspace — open Workspaces</span>`;
+    $("app-workspace").textContent = "";
+    return;
+  }
+  const drafts = dirtyIds(ws);
+  const draftText = drafts.length ? `${drafts.length} — ${drafts.map((id) => sectionById(ws, id).title).join(", ")}` : "none";
+  const pills = [];
+  if (extraPill) pills.push(`<span class="pill">${esc(extraPill)}</span>`);
+  pills.push(`<span class="pill workspace" title="${esc(ws.path)}">workspace: ${esc(ws.title)}</span>`);
+  pills.push(`<span class="pill">version ${esc(ws.version)}</span>`);
+  pills.push(`<span class="pill ${drafts.length ? "warn" : ""}">drafts: ${esc(draftText)}</span>`);
+  pills.push(`<span class="pill ${ws.clean ? "ok" : "warn"}">${ws.clean ? "working tree clean" : "uncommitted changes"}</span>`);
+  if (!ws.branch) {
+    pills.push(`<span class="pill warn">github: unknown</span>`);
+  } else {
+    pills.push(ws.inSync
+      ? `<span class="pill ok">in sync with origin/${esc(ws.branch)}</span>`
+      : `<span class="pill warn">out of sync (ahead ${ws.ahead}, behind ${ws.behind})</span>`);
+    pills.push(`<span class="pill">${esc(ws.branch)} @ ${esc(ws.head)}</span>`);
+  }
+  pills.push(ws.siteUrl
+    ? `<span class="pill">sample site: ${esc(ws.siteUrl)} (not a live URL)</span>`
+    : `<span class="pill warn">site URL unknown</span>`);
+  pills.push(`<span class="pill warn">offline sample — actions change this page only</span>`);
+  box.innerHTML = pills.join("");
+  $("app-title").innerHTML = `Race Rules Manager <span class="tag">admin</span><span class="tag demo">DEMO</span>`;
+  $("app-workspace").textContent = ws.path;
+  document.title = `${ws.title} — Admin (sample)`;
+}
+
+// ------------------------------------------------------------------ sections + editor
+
+function renderSections() {
+  const list = $("sections");
+  list.innerHTML = "";
+  const ws = activeWs();
+  if (!ws) {
+    list.innerHTML = `<li class="muted">No active workspace.</li>`;
+    return;
+  }
+  for (const sec of ws.sections) {
+    const item = document.createElement("li");
+    if (sec.id === state.currentId) item.classList.add("active");
+    const dot = isDirty(ws, sec.id) ? '<span class="dot" title="draft saved">●</span> ' : "";
+    item.innerHTML = `<span class="s-title">${dot}${esc(sec.title)}</span>
+                      <span class="s-path">${esc("docs/" + sec.path)}</span>`;
+    item.addEventListener("click", () => selectSection(sec));
+    list.appendChild(item);
+  }
+}
+
+function hasUnsavedEdits() {
+  const ws = activeWs();
+  if (!ws || !sectionById(ws, state.currentId)) return false;
+  return $("editor").value !== state.content;
+}
+
+function selectSection(sec) {
+  if (state.busy) return;
+  if (hasUnsavedEdits() && !confirm("Discard unsaved edits in the editor?")) return;
+  const ws = activeWs();
+  state.currentId = sec.id;
+  state.content = draftOf(ws, sec.id) ?? sec.published;
+  $("editor").value = state.content;
+  $("editor-title").textContent = sec.title;
+  $("editor-path").textContent = `docs/${sec.path}`;
+  $("editor-hint").textContent = "";
+  $("draft-banner").classList.toggle("hidden", !isDirty(ws, sec.id));
+  $("btn-save").disabled = false;
+  renderSections();
+}
+
+function resetEditor() {
+  state.currentId = null;
+  state.content = "";
+  $("editor").value = "";
+  $("editor-title").textContent = "Select a section";
+  $("editor-path").textContent = "";
+  $("editor-hint").textContent = "";
+  $("draft-banner").classList.add("hidden");
+  $("btn-save").disabled = true;
+  renderSections();
+}
+
+function saveDraft() {
+  const ws = activeWs();
+  if (!ws || !sectionById(ws, state.currentId) || state.busy) return;
+  const content = $("editor").value;
+  if (!content.trim()) {
+    $("editor-hint").textContent = "refusing to save an empty draft";
+    return;
+  }
+  ws.drafts[state.currentId] = content;
+  state.content = content;
+  $("draft-banner").classList.remove("hidden");
+  $("editor-hint").textContent = `draft saved in memory (${countBytes(content)} bytes)`;
+  renderSections();
+  setBusy(false);
+  renderDiff();
+}
+
+// ------------------------------------------------------------------ diff (computed in-page)
+
+function lcsOps(aLines, bLines) {
+  const n = aLines.length;
+  const m = bLines.length;
+  const table = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i -= 1) {
+    for (let j = m - 1; j >= 0; j -= 1) {
+      table[i][j] = aLines[i] === bLines[j]
+        ? table[i + 1][j + 1] + 1
+        : Math.max(table[i + 1][j], table[i][j + 1]);
+    }
+  }
+  const ops = [];
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (aLines[i] === bLines[j]) { ops.push({ op: " ", text: aLines[i] }); i += 1; j += 1; }
+    else if (table[i + 1][j] >= table[i][j + 1]) { ops.push({ op: "-", text: aLines[i] }); i += 1; }
+    else { ops.push({ op: "+", text: bLines[j] }); j += 1; }
+  }
+  while (i < n) { ops.push({ op: "-", text: aLines[i] }); i += 1; }
+  while (j < m) { ops.push({ op: "+", text: bLines[j] }); j += 1; }
+  return ops;
+}
+
+function diffOps(aText, bText) {
+  const ops = lcsOps(aText.replace(/\n$/, "").split("\n"), bText.replace(/\n$/, "").split("\n"));
+  const changed = [];
+  ops.forEach((o, idx) => { if (o.op !== " ") changed.push(idx); });
+  if (!changed.length) return [];
+  const groups = [];
+  let current = [changed[0]];
+  for (let k = 1; k < changed.length; k += 1) {
+    if (changed[k] - changed[k - 1] <= 3) current.push(changed[k]);
+    else { groups.push(current); current = [changed[k]]; }
+  }
+  groups.push(current);
+  const lines = [];
+  for (const group of groups) {
+    const start = Math.max(0, group[0] - 1);
+    const end = Math.min(ops.length - 1, group[group.length - 1] + 1);
+    let aStart = 0;
+    let bStart = 0;
+    let aCount = 0;
+    let bCount = 0;
+    for (let k = 0; k < start; k += 1) {
+      if (ops[k].op !== "+") aStart += 1;
+      if (ops[k].op !== "-") bStart += 1;
+    }
+    for (let k = start; k <= end; k += 1) {
+      if (ops[k].op !== "+") aCount += 1;
+      if (ops[k].op !== "-") bCount += 1;
+    }
+    lines.push({ text: `@@ -${aStart + 1},${aCount} +${bStart + 1},${bCount} @@`, cls: "hunk" });
+    for (let k = start; k <= end; k += 1) {
+      const o = ops[k];
+      lines.push({
+        text: (o.op === " " ? " " : o.op) + o.text,
+        cls: o.op === "+" ? "add" : o.op === "-" ? "del" : "ctx"
+      });
+    }
+  }
+  return lines;
+}
+
+function renderDiff() {
+  const pre = $("diff");
+  const ws = activeWs();
+  pre.innerHTML = "";
+  if (!ws) {
+    pre.textContent = "No active workspace.";
+    return;
+  }
+  const changed = ws.sections.filter((s) => isDirty(ws, s.id));
+  if (!changed.length) {
+    pre.textContent = "No drafts — the sample working copy matches the sample published rulebook.";
+    return;
+  }
+  for (const sec of changed) {
+    for (const line of diffOps(sec.published, draftOf(ws, sec.id))) {
+      const span = document.createElement("span");
+      span.className = line.cls;
+      span.textContent = line.text + "\n";
+      pre.appendChild(span);
+    }
+  }
+}
+
+// ------------------------------------------------------------------ publish / rollback pipeline (simulated)
+
+let lastStepLines = [];
+
+function showLog(lines) {
+  const pre = $("log");
+  pre.innerHTML = "";
+  for (const line of lines) {
+    const span = document.createElement("span");
+    span.className = line.cls || "";
+    span.textContent = line.text + "\n";
+    pre.appendChild(span);
+  }
+  lastStepLines = lines.filter((l) => l.cls === "step-ok" || l.cls === "step-fail");
+  switchTab("log");
+}
+
+function runSteps(steps, done) {
+  // steps: [{ label, action }] run one per tick; purely local, no waiting on anything external.
+  const lines = [];
+  let idx = 0;
+  const tick = () => {
+    if (idx >= steps.length) { done(); return; }
+    const step = steps[idx];
+    idx += 1;
+    step.action(lines);
+    lines.push({ text: `[ok] ${step.label}`, cls: "step-ok" });
+    showLog(lines.slice());
+    pipelineTimer = setTimeout(tick, 450);
+  };
+  tick();
+}
+
+function publish() {
+  const ws = activeWs();
+  if (state.busy || !ws) return;
+  const drafts = dirtyIds(ws);
+  if (!drafts.length) { toast("Nothing to publish — no drafts.", "warn"); return; }
+  if (!confirm("Publish the sample drafts? This only rewrites in-memory state; nothing can reach a live site.")) return;
+  setBusy(true, "publishing…");
+  const publishedMap = {};
+  ws.sections.forEach((s) => { publishedMap[s.id] = s.published; });
+  const previousVersion = ws.version;
+  showLog([{ text: "publishing — validating, building, committing and deploying (simulated locally)…", cls: "meta" }]);
+  runSteps([
+    { label: "validate draft front matter", action: () => {} },
+    { label: "check internal links", action: () => {} },
+    { label: "build mkdocs site", action: () => {} },
+    { label: "commit and push publish", action: (lines) => {
+      for (const id of drafts) {
+        sectionById(ws, id).published = draftOf(ws, id);
+        delete ws.drafts[id];
+      }
+      ws.version = Number(ws.version) + 1;
+      ws.head = rndHash();
+      ws.clean = true;
+      ws.inSync = true;
+      ws.history.push({ publishedMap, version: previousVersion, commit: ws.head, when: "just now" });
+      lines.push({ text: `  ${drafts.length} section${drafts.length === 1 ? "" : "s"} folded into the published copy`, cls: "meta" });
+    } },
+    { label: "deploy pages pipeline", action: (lines) => {
+      lines.push({ text: "  simulated only — no site was contacted", cls: "meta" });
+    } }
+  ], () => {
+    showLog([
+      ...lastStepLines,
+      { text: "", cls: "" },
+      { text: `published ${previousVersion} -> ${ws.version}`, cls: "step-ok" },
+      { text: `commit  ${ws.head}`, cls: "" },
+      { text: `live    ${ws.siteUrl || "(no site URL)"} — simulated, not a real request`, cls: "meta" }
+    ]);
+    resetEditorAfterAction();
+    setBusy(false);
+    toast(`Published sample version ${ws.version}`);
+  });
+}
+
+function rollback() {
+  const ws = activeWs();
+  if (state.busy || !ws) return;
+  if (!ws.history.length) {
+    showLog([{ text: "[FAIL] revert publish commit: error: nothing to roll back in this workspace", cls: "step-fail" }]);
+    toast("Nothing to roll back.", "warn");
+    return;
+  }
+  if (!confirm("Roll the sample published state back to the previous version? In-memory only.")) return;
+  setBusy(true, "rolling back…");
+  const snap = ws.history[ws.history.length - 1];
+  showLog([{ text: "rolling back — reverting, building and deploying (simulated locally)…", cls: "meta" }]);
+  runSteps([
+    { label: "revert publish commit", action: () => {
+      ws.history.pop();
+      for (const id of Object.keys(snap.publishedMap)) {
+        const sec = sectionById(ws, id);
+        if (sec) sec.published = snap.publishedMap[id];
+      }
+      ws.version = snap.version;
+      ws.head = snap.commit;
+    } },
+    { label: "build mkdocs site", action: () => {} },
+    { label: "deploy pages pipeline", action: (lines) => {
+      lines.push({ text: "  simulated only — no site was contacted", cls: "meta" });
+    } }
+  ], () => {
+    showLog([
+      ...lastStepLines,
+      { text: "", cls: "" },
+      { text: `rolled back to ${ws.version}`, cls: "step-ok" },
+      { text: `commit  ${ws.head}`, cls: "" }
+    ]);
+    resetEditorAfterAction();
+    setBusy(false);
+    toast(`Rolled back to sample version ${ws.version}`);
+  });
+}
+
+function resetEditorAfterAction() {
+  const ws = activeWs();
+  if (ws && sectionById(ws, state.currentId)) {
+    state.content = draftOf(ws, state.currentId) ?? sectionById(ws, state.currentId).published;
+    $("editor").value = state.content;
+    $("draft-banner").classList.toggle("hidden", !isDirty(ws, state.currentId));
+  }
+  renderSections();
+  renderDiff();
+}
+
+// ------------------------------------------------------------------ workspaces modal
+
+function workspaceMeta(ws) {
+  const bits = [`version ${ws.version}`];
+  if (ws.branch) bits.push(`${ws.branch} @ ${ws.head}`);
+  else bits.push("no git metadata");
+  const n = dirtyIds(ws).length;
+  if (n) bits.push(`${n} draft${n === 1 ? "" : "s"}`);
+  return bits.join(" · ");
+}
+
+function renderWorkspaces() {
+  const ws = activeWs();
+  const currentBox = $("ws-current");
+  if (!ws) {
+    currentBox.innerHTML = `<div class="ws-title">No workspace selected</div>
+      <div class="ws-path">Use “Switch workspace” or create one below.</div>`;
+  } else {
+    currentBox.innerHTML = `
+      <div class="ws-title">${esc(ws.title)} <span class="badge">active</span></div>
+      <div class="ws-path">${esc(ws.path)}</div>
+      <div class="ws-meta">
+        <span class="pill">${esc(workspaceMeta(ws))}</span>
+        <span class="pill ${ws.clean ? "ok" : "warn"}">${ws.clean ? "working tree clean" : "uncommitted changes"}</span>
+        <span class="pill">${esc(ws.siteUrl ? `site: ${ws.siteUrl}` : "no site URL")}</span>
+        <span class="pill">${esc(ws.repoUrl ? `repo: ${ws.repoUrl}` : "no repo URL")}</span>
+      </div>`;
+  }
+
+  const list = $("ws-list");
+  list.innerHTML = "";
+  for (const item of WS) {
+    const isActive = item.id === state.activeId;
+    const el = document.createElement("div");
+    el.className = `ws-item${isActive ? " active" : ""}`;
+    const actions = isActive
+      ? `<span class="badge">active</span>`
+      : `<button class="secondary ws-action" data-switch="${esc(item.id)}">Switch</button>`;
+    el.innerHTML = `
+      <div class="ws-item-main">
+        <div class="ws-item-title">${esc(item.title)}</div>
+        <span class="ws-item-path">${esc(item.path)}</span>
+        <span class="ws-item-meta">${esc(workspaceMeta(item))}</span>
+      </div>
+      <div class="ws-item-actions">${actions}</div>`;
+    list.appendChild(el);
+  }
+  list.querySelectorAll("[data-switch]").forEach((button) => {
+    button.addEventListener("click", () => switchWorkspace(button.dataset.switch));
+  });
+
+  const source = $("ws-create-source");
+  const previous = source.value;
+  source.innerHTML = "";
+  for (const item of WS) {
+    const option = document.createElement("option");
+    option.value = item.id;
+    option.textContent = `${item.title} — ${item.path}`;
+    source.appendChild(option);
+  }
+  if ([...source.options].some((o) => o.value === previous)) source.value = previous;
+  else if (state.activeId) source.value = state.activeId;
+
+  const forget = $("ws-forget-list");
+  forget.innerHTML = "";
+  const removable = WS.filter((item) => item.id !== state.activeId);
+  if (!removable.length) {
+    forget.innerHTML = `<div class="muted">Nothing else in the list.</div>`;
+  }
+  for (const item of removable) {
+    const el = document.createElement("div");
+    el.className = "ws-item";
+    el.innerHTML = `
+      <div class="ws-item-main">
+        <div class="ws-item-title">${esc(item.title)}</div>
+        <span class="ws-item-path">${esc(item.path)}</span>
+      </div>
+      <div class="ws-item-actions">
+        <button class="secondary ws-action" data-forget="${esc(item.id)}">Remove</button>
+      </div>`;
+    forget.appendChild(el);
+  }
+  forget.querySelectorAll("[data-forget]").forEach((button) => {
+    button.addEventListener("click", () => forgetWorkspace(button.dataset.forget));
+  });
+}
+
+function applySuggestedCreateDefaults() {
+  const path = $("ws-create-path");
+  const title = $("ws-create-title");
+  const year = $("ws-create-year");
+  if (!path.dataset.touched && !path.value) path.value = SUGGESTED.path;
+  if (!title.dataset.touched && !title.value) title.value = SUGGESTED.title;
+  if (!year.dataset.touched && !year.value) year.value = SUGGESTED.year;
+}
+
+function switchWorkspace(id) {
+  if (state.busy) return;
+  if (hasUnsavedEdits() && !confirm("Discard unsaved edits in the editor?")) return;
+  const ws = wsById(id);
+  if (!ws) return;
+  state.activeId = id;
+  resetEditor();
+  closeWorkspaces();
+  setBusy(false);
+  renderSections();
+  renderDiff();
+  toast(`Now working on ${ws.title}`);
+}
+
+function titleFromPath(path) {
+  const last = path.replace(/[/~]+$/, "").split("/").filter(Boolean).pop() || "New workspace";
+  return last.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function addExisting(event) {
+  event.preventDefault();
+  const input = $("ws-add-path");
+  const path = input.value.trim();
+  if (!path) return;
+  if (WS.some((w) => w.path === path)) {
+    switchWorkspace(WS.find((w) => w.path === path).id);
+    input.value = "";
+    return;
+  }
+  const ws = workspace(`ws-${WS.length + 1}-${Date.now()}`, titleFromPath(path), path, blankSections(), { version: 1 });
+  WS.push(ws);
+  input.value = "";
+  switchWorkspace(ws.id);
+}
+
+function createWorkspace(event) {
+  event.preventDefault();
+  if (state.busy) return;
+  const hint = $("ws-create-hint");
+  const path = $("ws-create-path").value.trim();
+  if (!path) {
+    toast("Choose a directory for the new workspace.", "warn");
+    hint.textContent = "choose a directory first";
+    return;
+  }
+  if (WS.some((w) => w.path === path)) {
+    toast("A workspace already uses that directory in this sample.", "warn");
+    hint.textContent = "directory already listed";
+    return;
+  }
+  const mode = $("ws-create-mode").value;
+  const yearText = $("ws-create-year").value.trim();
+  if (yearText && (!/^\d{4}$/.test(yearText) || Number(yearText) < 2000 || Number(yearText) > 2100)) {
+    toast("Year must be a whole number between 2000 and 2100.", "warn");
+    return;
+  }
+  let sections;
+  if (mode === "copy") {
+    const src = wsById($("ws-create-source").value);
+    if (!src) {
+      toast("Choose a workspace to copy from.", "warn");
+      return;
+    }
+    sections = src.sections.map((s) => section(s.id, s.title, s.path, s.published));
+  } else {
+    sections = blankSections();
+  }
+  const title = $("ws-create-title").dataset.touched
+    ? $("ws-create-title").value.trim() || titleFromPath(path)
+    : yearText ? `Fred Lobster Race Rules ${yearText}` : titleFromPath(path);
+  hint.textContent = "creating files, git repo and first commit… (simulated)";
+  setTimeout(() => {
+    const useGit = $("ws-create-git").checked;
+    const ws = workspace(`ws-${WS.length + 1}-${Date.now()}`, title, path, sections, {
+      version: 1,
+      branch: useGit ? "main" : "",
+      head: useGit ? rndHash() : "",
+      siteUrl: "",
+      repoUrl: $("ws-create-repo").value.trim()
+    });
+    WS.push(ws);
+    hint.textContent = "";
+    $("ws-create-form").reset();
+    ["ws-create-path", "ws-create-title", "ws-create-year"].forEach((id) => delete $(id).dataset.touched);
+    $("ws-source-wrap").classList.add("hidden");
+    applySuggestedCreateDefaults();
+    switchWorkspace(ws.id);
+    toast(`Created ${ws.title}`);
+  }, 650);
+}
+
+function forgetWorkspace(id) {
+  if (state.busy) return;
+  const ws = wsById(id);
+  if (!ws) return;
+  if (!confirm(`Remove ${ws.title} from the workspace list? In this sample nothing is deleted, the entry just disappears.`)) return;
+  const idx = WS.findIndex((w) => w.id === id);
+  if (idx >= 0) WS.splice(idx, 1);
+  renderWorkspaces();
+  toast("Removed from the workspace list.");
+}
+
+// ------------------------------------------------------------------ ui plumbing
+
+function switchTab(name) {
+  document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === name));
+  for (const panel of ["editor", "diff", "log"]) {
+    $(`tab-${panel}`).classList.toggle("hidden", panel !== name);
+  }
+  if (name === "diff") renderDiff();
+}
+
+function openWorkspaces() {
+  $("workspace-modal").classList.remove("hidden");
+  applySuggestedCreateDefaults();
+  renderWorkspaces();
+}
+
+function closeWorkspaces() {
+  $("workspace-modal").classList.add("hidden");
+}
+
+function applyTheme(theme) {
+  const value = theme === "light" ? "light" : "dark";
+  document.documentElement.dataset.theme = value; // in memory only — nothing is persisted
+  $("btn-theme").textContent = value === "light" ? "🌙 Dark" : "☀ Light";
+  const action = value === "light" ? "Switch to dark mode" : "Switch to light mode";
+  $("btn-theme").title = action;
+  $("btn-theme").setAttribute("aria-label", action);
+}
+
+$("btn-theme").addEventListener("click", () => {
+  applyTheme(document.documentElement.dataset.theme === "light" ? "dark" : "light");
+});
+$("btn-workspaces").addEventListener("click", openWorkspaces);
+$("btn-close-workspaces").addEventListener("click", closeWorkspaces);
+$("workspace-modal").addEventListener("click", (event) => {
+  if (event.target === $("workspace-modal")) closeWorkspaces();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !$("workspace-modal").classList.contains("hidden")) closeWorkspaces();
+});
+
+$("ws-create-mode").addEventListener("change", () => {
+  $("ws-source-wrap").classList.toggle("hidden", $("ws-create-mode").value !== "copy");
+});
+["ws-create-path", "ws-create-title"].forEach((id) => {
+  $(id).addEventListener("input", (event) => { event.target.dataset.touched = "1"; });
+});
+$("ws-create-year").addEventListener("input", (event) => {
+  event.target.dataset.touched = "1";
+  const title = $("ws-create-title");
+  if (!title.dataset.touched && /^\d{4}$/.test(event.target.value)) {
+    title.value = `Fred Lobster Race Rules ${event.target.value}`;
+  }
+});
+$("ws-add-form").addEventListener("submit", addExisting);
+$("ws-create-form").addEventListener("submit", createWorkspace);
+
+document.querySelectorAll(".tab").forEach((tab) => {
+  tab.addEventListener("click", () => switchTab(tab.dataset.tab));
+});
+
+$("btn-save").addEventListener("click", saveDraft);
+$("btn-publish").addEventListener("click", publish);
+$("btn-rollback").addEventListener("click", rollback);
+$("btn-refresh-diff").addEventListener("click", () => { renderDiff(); toast("Diff recomputed from the in-memory drafts."); });
+
+$("editor").addEventListener("input", () => {
+  if (!activeWs() || !sectionById(activeWs(), state.currentId)) return;
+  const changed = $("editor").value !== state.content;
+  $("editor-hint").textContent = changed ? "unsaved edits — click Save draft" : "";
+});
+
+// ------------------------------------------------------------------ init (all local)
+
+applyTheme("dark");
+resetEditor();
+renderSections();
+renderDiff();
+setBusy(false);
+  </script>
+</body>
+</html>
