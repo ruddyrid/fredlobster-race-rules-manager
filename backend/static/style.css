@@ -116,6 +116,17 @@ button.danger { background: transparent; border-color: var(--accent); color: var
 button.secondary { background: transparent; }
 header button.secondary { background: #fff; color: #1a1f2e; border-color: #c9cbd2; }
 header button.secondary:hover { border-color: var(--accent); }
+header a.secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #c9cbd2;
+  border-radius: 4px;
+  background: #fff;
+  color: #1a1f2e;
+  text-decoration: none;
+}
+header a.secondary:hover { border-color: var(--accent); }
 header #btn-theme {
   background: #1a1f2e;
   color: #fff;

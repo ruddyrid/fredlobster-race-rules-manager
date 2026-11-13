@@ -38,7 +38,7 @@ from urllib.parse import urlsplit
 
 import yaml
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, StrictInt
 
@@ -58,6 +58,18 @@ STATE_LOCK = threading.Lock()
 app = FastAPI(title="Fred Lobster Race Rules Manager — backend", docs_url=None, redoc_url=None)
 
 STATIC_DIR = BACKEND / "static"
+DEMO_FILE = MANAGER_ROOT / "demo" / "index.html"
+
+
+@app.get("/ui/demo", include_in_schema=False)
+@app.get("/ui/demo/", include_in_schema=False)
+def ui_demo() -> FileResponse:
+    """Read-only sample of the admin GUI: fake data, self-contained page, no /api
+    calls. Registered before the /ui mount (which would swallow the path) so it
+    rides the same tailnet-only binding without copying the file into static/."""
+    if not DEMO_FILE.is_file():
+        raise HTTPException(status_code=404, detail="demo/index.html is missing from the manager checkout")
+    return FileResponse(DEMO_FILE, media_type="text/html")
 
 
 if STATIC_DIR.is_dir():
