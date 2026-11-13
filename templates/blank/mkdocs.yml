@@ -1,0 +1,70 @@
+site_name: "{{TITLE}}"
+site_description: "Official Competition Rules and Technical Regulations"
+repo_url: "{{REPO_URL}}"
+
+copyright: "{{TITLE}} &nbsp;·&nbsp; v1.0 (updated {{DATE}})"
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - scheme: default
+      media: "(prefers-color-scheme: light)"
+      primary: deep orange
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - scheme: slate
+      media: "(prefers-color-scheme: dark)"
+      primary: deep orange
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+  font:
+    text: Hanken Grotesk
+    code: Spline Sans Mono
+
+nav:
+  - Home: index.md
+  - Quick Reference: quick-reference.md
+  - Rules:
+      - Overview: rules/index.md
+      - Safety: rules/safety.md
+      - Vehicle Classes: rules/classes.md
+      - Technical Specifications: rules/technical.md
+      - Race Procedures: rules/procedures.md
+      - Penalties & Protests: rules/penalties.md
+  - Appendices:
+      - Diagrams & Forms: appendices/index.md
+      - Glossary: appendices/glossary.md
+  - Changelog: changelog.md
+
+plugins:
+  - search
+  - print-site:
+      add_to_navigation: true
+      print_page_title: "Printable Rulebook"
+      print_page_basename: print_page
+      add_table_of_contents: true
+      toc_title: "Table of Contents"
+      enumerate_headings: true
+      add_cover_page: false
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list

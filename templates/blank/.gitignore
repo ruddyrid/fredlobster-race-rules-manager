@@ -1,0 +1,12 @@
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Local virtual environment
+.venv/
+
+# MkDocs build output
+site/
+
+# Logs
+*.log

@@ -1,15 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Fred Lobster Race Rules 2027 — Admin</title>
+  <title>Race Rules Manager — Admin</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <h1>Fred Lobster Race Rules 2027 <span class="tag">admin</span></h1>
+    <div class="brand">
+      <h1 id="app-title">Race Rules Manager <span class="tag">admin</span></h1>
+      <span id="app-workspace" class="brand-sub"></span>
+    </div>
     <div class="actions">
+      <button id="btn-workspaces" class="secondary">Workspaces</button>
+      <button id="btn-theme" class="secondary" type="button" title="Switch to light mode" aria-label="Switch to light mode">☀ Light</button>
       <button id="btn-publish" class="primary">Publish to live site</button>
       <button id="btn-rollback" class="danger">Rollback last publish</button>
     </div>
@@ -60,6 +65,82 @@
       </div>
     </section>
   </main>
+
+  <div id="workspace-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="workspace-modal-title">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 id="workspace-modal-title">Workspaces</h2>
+          <p class="hint">Each workspace is one race rules directory, with its own repo, version and drafts.</p>
+        </div>
+        <button id="btn-close-workspaces" class="icon" aria-label="Close workspaces">×</button>
+      </div>
+
+      <div class="modal-body">
+        <section class="ws-section">
+          <h3>Current workspace</h3>
+          <div id="ws-current" class="ws-current">loading…</div>
+        </section>
+
+        <section class="ws-section">
+          <h3>Switch workspace</h3>
+          <div id="ws-list" class="ws-list">loading…</div>
+          <form id="ws-add-form" class="inline-form">
+            <input id="ws-add-path" placeholder="~/fredlobster-race-rules-2028" autocomplete="off" spellcheck="false">
+            <button type="submit" class="secondary">Add &amp; switch</button>
+          </form>
+          <p class="hint">An existing directory must contain <code>docs/</code> and <code>mkdocs.yml</code>.</p>
+        </section>
+
+        <section class="ws-section">
+          <h3>Create a new workspace</h3>
+          <form id="ws-create-form" class="stack">
+            <label>Directory
+              <input id="ws-create-path" required autocomplete="off" spellcheck="false">
+            </label>
+            <div class="row">
+              <label>Start from
+                <select id="ws-create-mode">
+                  <option value="blank">Blank template</option>
+                  <option value="copy">Copy an existing workspace</option>
+                </select>
+              </label>
+              <label id="ws-source-wrap" class="hidden">Copy from
+                <select id="ws-create-source"></select>
+              </label>
+            </div>
+            <div class="row">
+              <label>Title
+                <input id="ws-create-title" maxlength="160" autocomplete="off">
+              </label>
+              <label>Year
+                <input id="ws-create-year" type="number" min="2000" max="2100" step="1">
+              </label>
+            </div>
+            <label>GitHub repo URL <span class="hint">optional</span>
+              <input id="ws-create-repo" placeholder="https://github.com/owner/repo" autocomplete="off" spellcheck="false">
+            </label>
+            <label class="check">
+              <input id="ws-create-git" type="checkbox" checked>
+              Initialize git and make the first commit
+            </label>
+            <div class="form-actions">
+              <span id="ws-create-hint" class="hint"></span>
+              <button type="submit" class="primary">Create &amp; switch</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="ws-section">
+          <h3>Remove from list</h3>
+          <p class="hint">This only hides the directory here. Files are never deleted.</p>
+          <div id="ws-forget-list" class="ws-list compact"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
 
   <script src="app.js"></script>
 </body>

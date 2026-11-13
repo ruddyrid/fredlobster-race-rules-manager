@@ -10,20 +10,19 @@ address `http://100.108.5.126:8100` depending on `FL_HOST`; `fred` tries both
 
 ## Getting `fred` on your PATH
 
-Nothing is installed system-wide. Pick one:
+Nothing is installed system-wide. A new terminal already has `~/.local/bin` on
+`PATH`, so one user-local link is enough to run `fred` from `~/` or anywhere
+else:
 
 ```bash
-cd ~/fredlobster-race-rules-manager
-
-# a) put this folder on PATH for the current shell
-export PATH="$PWD/fred:$PATH"
-
-# b) or a user-local symlink (optional)
-ln -s "$PWD/fred/fred" ~/.local/bin/fred
-
-# c) or just call it by path
-./fred/fred status
+ln -sfn ~/fredlobster-race-rules-manager/fred/fred ~/.local/bin/fred
+cd ~
+fred status
 ```
+
+The launcher follows that symlink back to `fred.py`. Without the link, call it
+by path (`./fred/fred status` from the repo) or `export PATH="$PWD/fred:$PATH"`
+for the current shell only.
 
 The launcher uses the project venv's Python when it exists, otherwise `python3`.
 
@@ -36,11 +35,12 @@ traces. Set `FRED_DEBUG=1` if you ever want the traceback.
 |---|---|
 | `fred status` | Published version, open drafts, and git state (clean/uncommitted, in sync with `origin/main`) |
 | `fred sections` | Section list with titles and file paths, in `mkdocs.yml` nav order |
-| `fred show <section>` | Print that section's Markdown |
+| `fred show <section>` | Open that section's Markdown in `glow`; plain text when piped (or `--plain`) |
 | `fred edit <section>` | Open the section in `$EDITOR` as a **draft**; saved via the backend, never into `docs/` |
 | `fred diff` | Draft vs published, line by line |
 | `fred publish` | Run the backend pipeline: validate → bump → build → one commit → push → verify live |
 | `fred rollback` | `git revert` the last publish commit, rebuild, redeploy |
+| `fred tmux` | Build the Herdr three-pane layout (editor, log, numbered overview menu). Outside Herdr it prints the plan. `--dry-run` shows the plan without touching panes |
 
 `<section>` accepts the id (`rules-safety`), the path (`rules/safety.md`), the path
 without extension (`rules/safety`), or the title (`Safety`).
@@ -63,35 +63,48 @@ it until you publish. Rollback restores the previous published version as a clea
 
 ## herdr three-pane working layout
 
-A comfortable layout: **overview** pane, **editor** pane, and a **backend log** pane.
-Pane IDs are dynamic, so nothing below hardcodes them.
+Agents: the latest working setup (user-local `fred` link, reuse existing panes,
+Herdr not tmux) is `init/fred-tmux.md`. Follow that file instead of improvising.
 
-From `~/fredlobster-race-rules-manager`, in the pane you want as the editor:
+Run `fred tmux` in the pane you want as the editor. It builds three panes and
+never more:
 
-```bash
-# add a pane to the right (becomes the overview) and one below (becomes the log)
-herdr pane split --current --direction right --cwd "$PWD" --no-focus
-herdr pane split --current --direction down  --cwd "$PWD" --no-focus
+```text
++------------------+------------------+
+| editor           | overview         |
+| (you type here)  | numbered fred    |
++------------------+ menu             |
+| log              |                  |
++------------------+------------------+
 ```
 
-`--no-focus` keeps you in the editor pane; both splits come off the same pane, so
-you get: editor on the left (top), log bottom-left, overview on the right. Mirror it
-by swapping `right` for `left` if you prefer the overview on the left.
+- **editor** (left, top) — where you run `fred edit <section>` and `fred publish`.
+- **log** (left, bottom) — `journalctl --user -u fredlobster-backend -f`.
+- **overview** (right, full height) — the fred menu. Type a number, no commands
+  to remember:
 
-Then start each command in its pane — either click into it, or drive it from the
-editor pane (needs `jq`):
+| Key | Action |
+|---|---|
+| `1` | Status (version, drafts, git, site) |
+| `2` | List sections |
+| `3` | Read a section in `glow` (pick by number or name) |
+| `4` | Edit a section as a draft (`$EDITOR` opens in this pane) |
+| `5` | Review drafts (diff) |
+| `6` | Publish drafts (asks you to type `yes`) |
+| `7` | Roll back the last publish (asks you to type `yes`) |
+| `8` | Workspaces: switch, **new rules directory** (`n`), copy (`c`), add (`a`), remove (`r`) |
+| `q` | Quit the menu (the pane returns to a shell) |
 
-```bash
-herdr pane list                      # show pane ids
-herdr pane run <overview-id> sh -c 'cd ~/fredlobster-race-rules-manager && fred status'
-herdr pane run <log-id> journalctl --user -u fredlobster-backend -f
-```
+Rebuilding is safe. If the tab already has the three-pane geometry (editor
+top-left, log directly below it, overview full height on the right, nothing
+else), those panes are reused whatever their labels. If the tab has other panes,
+`fred tmux` refuses to split and asks for a tab with only the editor pane, so it
+never leaves more than three fred panes. Splits start in the directory you ran
+`fred tmux` from. A leftover `workspace` pane from the earlier four-pane layout is
+ignored; close it by hand if you do not want it.
 
-Day-to-day in the panes:
-
-- **overview** — `fred status`, `fred sections`, `fred diff`
-- **editor** — `fred edit <section>` (drafts), then `fred publish` when happy
-- **log** — `journalctl --user -u fredlobster-backend -f` (every API call the backend handles)
+`fred tmux --dry-run` prints the plan (panes that would be created and the
+command each runs) and changes nothing.
 
 ## Notes
 
