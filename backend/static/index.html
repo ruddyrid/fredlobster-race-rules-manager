@@ -47,8 +47,11 @@
         <span id="selection-count" class="muted" aria-live="polite">0 selected</span>
         <button id="btn-copy-sections" class="secondary" type="button" disabled>Copy selected</button>
         <button id="btn-archive-sections" class="secondary" type="button" disabled>Archive selected</button>
-        <button id="btn-move-up" class="secondary" type="button" disabled aria-label="Move selected section up">↑</button>
-        <button id="btn-move-down" class="secondary" type="button" disabled aria-label="Move selected section down">↓</button>
+      </div>
+      <div class="order-actions" aria-label="Reorder active section">
+        <span id="active-order-label" class="muted" aria-live="polite">Open a section to reorder it</span>
+        <button id="btn-move-up" class="secondary" type="button" disabled aria-label="Move active section up" title="Move active section up">↑</button>
+        <button id="btn-move-down" class="secondary" type="button" disabled aria-label="Move active section down" title="Move active section down">↓</button>
       </div>
       <ul id="sections"></ul>
       <details class="archive-list">

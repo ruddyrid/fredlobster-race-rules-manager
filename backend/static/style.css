@@ -196,6 +196,9 @@ aside h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em
 .section-search, .section-filter { flex: none; }
 .bulk-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
 .bulk-actions .muted { margin-right: auto; white-space: nowrap; }
+.order-actions { display: flex; align-items: center; gap: 0.35rem; }
+.order-actions .muted { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.order-actions button { flex: none; }
 #sections { list-style: none; margin: 0; padding: 0; overflow-y: auto; min-height: 2rem; }
 #sections li {
   display: flex;
@@ -462,6 +465,8 @@ input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1
   main { min-height: 0; }
   aside { padding: 0.6rem; }
   .bulk-actions button { flex: 1 1 auto; }
+  .order-actions { flex-wrap: wrap; }
+  .order-actions .muted { flex-basis: 100%; }
   #archived-sections li { align-items: flex-start; flex-direction: column; }
   .archive-actions { width: 100%; justify-content: flex-start; }
   .archive-actions button { flex: 1 1 auto; }

@@ -510,13 +510,10 @@ function updateSelectionControls() {
   $("selection-count").textContent = `${count} selected`;
   $("btn-copy-sections").dataset.unavailable = count ? "0" : "1";
   $("btn-archive-sections").dataset.unavailable = count ? "0" : "1";
-  const selectedIndexes = state.sections
-    .map((section, index) => state.selectedSections.has(section.id) ? index : -1)
-    .filter((index) => index >= 0);
-  const firstSelected = selectedIndexes[0] ?? -1;
-  const lastSelected = selectedIndexes.at(-1) ?? -1;
-  $("btn-move-up").dataset.unavailable = firstSelected > 0 ? "0" : "1";
-  $("btn-move-down").dataset.unavailable = lastSelected >= 0 && lastSelected < state.sections.length - 1 ? "0" : "1";
+  const activeIndex = state.current ? state.sections.findIndex((section) => section.id === state.current.id) : -1;
+  $("active-order-label").textContent = state.current ? `Move active: ${state.current.title}` : "Open a section to reorder it";
+  $("btn-move-up").dataset.unavailable = activeIndex > 0 ? "0" : "1";
+  $("btn-move-down").dataset.unavailable = activeIndex >= 0 && activeIndex < state.sections.length - 1 ? "0" : "1";
   const unavailable = state.busy || Boolean(state.pendingPublish) || state.recoveryRequired;
   for (const id of ["btn-copy-sections", "btn-archive-sections", "btn-move-up", "btn-move-down"]) {
     $(id).disabled = unavailable || $(id).dataset.unavailable === "1";
@@ -736,26 +733,14 @@ async function permanentlyDeleteSections(ids) {
   }
 }
 
-async function moveSelectedSection(direction) {
-  if (state.busy || !canLeaveEditor() || !state.selectedSections.size) return;
+async function moveCurrentSection(direction) {
+  if (state.busy || state.pendingPublish || state.recoveryRequired || !state.current) return;
+  if (hasUnsavedEdits() && !confirm("Reorder this section? Unsaved editor changes will remain unsaved.")) return;
   const ids = state.sections.map((section) => section.id);
-  let moved = false;
-  if (direction < 0) {
-    for (let index = 1; index < ids.length; index += 1) {
-      if (state.selectedSections.has(ids[index]) && !state.selectedSections.has(ids[index - 1])) {
-        [ids[index - 1], ids[index]] = [ids[index], ids[index - 1]];
-        moved = true;
-      }
-    }
-  } else {
-    for (let index = ids.length - 2; index >= 0; index -= 1) {
-      if (state.selectedSections.has(ids[index]) && !state.selectedSections.has(ids[index + 1])) {
-        [ids[index], ids[index + 1]] = [ids[index + 1], ids[index]];
-        moved = true;
-      }
-    }
-  }
-  if (!moved) return;
+  const index = ids.indexOf(state.current.id);
+  const target = index + direction;
+  if (index < 0 || target < 0 || target >= ids.length) return;
+  [ids[index], ids[target]] = [ids[target], ids[index]];
   setBusy(true, "saving section order…");
   try {
     await api("PUT", "/api/sections/order", { ids });
@@ -978,8 +963,8 @@ $("section-search").addEventListener("input", renderSections);
 $("section-filter").addEventListener("change", renderSections);
 $("btn-copy-sections").addEventListener("click", openCopyModal);
 $("btn-archive-sections").addEventListener("click", archiveSelectedSections);
-$("btn-move-up").addEventListener("click", () => moveSelectedSection(-1));
-$("btn-move-down").addEventListener("click", () => moveSelectedSection(1));
+$("btn-move-up").addEventListener("click", () => moveCurrentSection(-1));
+$("btn-move-down").addEventListener("click", () => moveCurrentSection(1));
 $("btn-toggle-sections").addEventListener("click", () => {
   const open = $("section-sidebar").classList.toggle("mobile-open");
   $("btn-toggle-sections").setAttribute("aria-expanded", String(open));
