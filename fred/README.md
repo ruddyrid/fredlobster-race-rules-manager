@@ -40,6 +40,7 @@ traces. Set `FRED_DEBUG=1` if you ever want the traceback.
 | `fred diff` | Draft vs published, line by line |
 | `fred publish` | Run the backend pipeline: validate → bump → build → one commit → push → verify live |
 | `fred rollback` | `git revert` the last publish commit, rebuild, redeploy |
+| `fred recover` | Restore saved pre-publish files after interrupted staging; requires typing `RESTORE` |
 | `fred tmux` | Build the Herdr three-pane layout (editor, log, numbered overview menu). Outside Herdr it prints the plan. `--dry-run` shows the plan without touching panes |
 
 `<section>` accepts the id (`rules-safety`), the path (`rules/safety.md`), the path
@@ -55,10 +56,12 @@ fred edit rules-technical          # opens $EDITOR; saving creates a draft
 fred diff                          # review exactly what publish would change
 fred publish                       # prints version, commit SHA, live link
 fred rollback                      # undo the last publish on the live site
+fred recover                       # only when status reports interrupted publish staging
 ```
 
 A draft is backend-only (`backend/drafts/`, gitignored). The public site cannot see
-it until you publish. Rollback restores the previous published version as a clean
+it until you publish. This includes section additions, copies, ordering, archive,
+restore, and deletion. Rollback restores the previous published version as a clean
 `git revert` commit.
 
 ## herdr three-pane working layout
@@ -93,7 +96,17 @@ never more:
 | `6` | Publish drafts (asks you to type `yes`) |
 | `7` | Roll back the last publish (asks you to type `yes`) |
 | `8` | Workspaces: switch, **new rules directory** (`n`), copy (`c`), add (`a`), remove (`r`) |
+| `9` | Section management submenu: add, copy, reorder, archive, restore, permanently delete |
+| `10` | Recover interrupted publish staging (type `RESTORE` to confirm) |
 | `q` | Quit the menu (the pane returns to a shell) |
+
+Section management lists active and archived sections. Add and copy ask for a
+title and a path under `docs/`; copy also asks which active section to use as its
+source. Reorder takes the desired order as comma-separated list numbers. Archive,
+restore, and permanent deletion ask for a typed confirmation; deletion is only
+offered for archived sections. These structural changes are backend-only drafts,
+just like edits, and do not change the public rulebook until an explicitly
+approved publish. Permanent deletion cannot be undone once published.
 
 Rebuilding is safe. If the tab already has the three-pane geometry (editor
 top-left, log directly below it, overview full height on the right, nothing

@@ -24,6 +24,12 @@ in the rulebook working copy, `~/fredlobster-race-rules-2027`, found via `FL_REP
 | GET | `/api/status` | version, draft state, git clean/sync state |
 | GET | `/api/sections` | nav sections in `mkdocs.yml` order + file contents |
 | PUT | `/api/draft/{section}` | save a draft (`{"content": "..."}`) |
+| POST | `/api/sections` | add a section draft; optional `copy_from` copies existing content |
+| PUT | `/api/sections/order` | stage the complete active section order (`{"ids": [...]}`) |
+| POST | `/api/sections/archive` | archive active sections (`{"ids": [...]}`) |
+| POST | `/api/sections/restore` | restore archived sections (`{"ids": [...]}`) |
+| DELETE | `/api/sections` | stage permanent deletion of archived sections (`{"ids": [...]}`) |
+| POST | `/api/recovery/restore` | explicitly restore the pre-publish snapshot (`{"confirm": "RESTORE"}`) after an interrupted staging transaction |
 | GET | `/api/diff` | draft vs published, unified diff per section |
 | POST | `/api/publish` | validate → bump → build → commit → push → verify live |
 | POST | `/api/rollback` | `git revert` the last publish commit, rebuild, redeploy |
@@ -31,19 +37,34 @@ in the rulebook working copy, `~/fredlobster-race-rules-2027`, found via `FL_REP
 Section ids are the nav path without `.md`, with `/` as `-`:
 `rules-safety`, `rules-technical`, `quick-reference`, `changelog`, `index`, …
 
+Section structure operations are drafts too. `GET /api/sections` returns the
+effective active list, archived list, and section content; pending changes are
+stored in the backend's ignored `backend/drafts/` directory and included in
+`GET /api/diff`. They do not change the rulebook working copy until publish.
+Publishing an archive removes the page from navigation and moves its Markdown
+under the rulebook root's `.fred-archive/` directory, outside `docs/` so it is
+not built into the public site. The archive index and page are committed with
+the publish and can be restored later. Permanent deletion is limited to
+archived sections, requires an explicit client confirmation, and is applied
+only by publish. If a publish or rollback commit is made locally but pushing or
+live-site verification fails, the backend records a retry marker; the GUI and
+`fred diff` show which action is pending, and that explicit action retries the
+existing commit instead of creating a second one.
+
 ## Publish pipeline
 
 One operation, stops at the first failure and publishes nothing:
 
 1. **validate** — every nav section exists and is non-empty, no leftover include
    syntax, `mkdocs build --strict` (this is also the broken-internal-link check).
-2. **stage** — drafts are written into `docs/`, the footer version is bumped
-   (`v1.0` → `v1.1`, same `copyright:` mechanism as Phase 1), and the changelog
-   entry is appended.
+2. **stage** — text and structural drafts are applied, archived Markdown is
+   moved outside `docs/`, the footer version is bumped (`v1.0` → `v1.1`, same
+   `copyright:` mechanism as Phase 1), and the changelog entry is appended.
 3. **build** — `mkdocs build --strict`; on failure the staged files are rolled back
    and nothing is committed.
 4. **commit** — one commit, message `Publish v1.x: <sections> updated`, containing
-   the drafts, the version stamp, and the changelog entry together.
+   the drafts, navigation, archive changes, version stamp, and changelog entry
+   together.
 5. **deploy** — `git push origin main`; the repo's existing GitHub Actions workflow
    (`deploy.yml`) builds and gh-deploys to `gh-pages`. No second deploy mechanism.
 6. **verify** — polls the public site until it serves the new version string.
@@ -85,8 +106,9 @@ To expose it to the tailnet later, set `FL_HOST` to the Tailscale address
   matter without the `meta` extension would render as page text, and with it would
   leak into the include-markdown combined pages.
 - `site/` is tracked in git upstream, so `mkdocs build` dirties it. The cleanliness
-  check only looks at `docs/`, `mkdocs.yml` and `requirements.txt`, so builds don't
-  block a publish.
+  publish check only looks at `docs/`, `mkdocs.yml`, `requirements.txt` and the
+  archive, so generated site output does not block a publish. Rollback refuses
+  other uncommitted work before using its revert/build recovery path.
 - `publish` refuses to run when those published sources already have uncommitted
   changes, so the publish is always exactly one clean commit (and `rollback` can
   revert only that commit).

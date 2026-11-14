@@ -31,13 +31,25 @@ Header buttons, left to right:
 | **Workspaces** | Opens the workspaces modal (see below). |
 | **☀ Light / 🌙 Dark** | Toggles the theme; your choice is remembered in the browser (`localStorage`), dark is the default. |
 | **Publish to live site** | Disabled while there are no drafts. Asks for confirmation, then runs the whole publish pipeline and switches to the Result tab (see below). |
-| **Rollback last publish** | Asks for confirmation, then `git revert`s the most recent publish commit, rebuilds, redeploys and waits for the live site. Refuses if the last commit isn't a publish. |
+| **Rollback last publish** | Asks for confirmation, then `git revert`s the most recent publish commit, rebuilds, redeploys and waits for the live site. Refuses if the last commit isn't a publish or the working tree has uncommitted changes. |
 
 **Sections** (left sidebar) lists every rule section from the active
 workspace's nav, each with its bare path (e.g. `rules/safety.md`); the editor
-header shows the full file location prefixed with `docs/`. A `●` dot marks
-sections that have a saved draft. Clicking a section loads its Markdown into
-the editor; if you have unsaved edits the GUI asks before discarding them.
+header shows the full file location prefixed with `docs/`. Search/filter the
+list, select multiple sections to copy or archive them, or select a section and
+use the up/down arrows to adjust navigation order. **Add section** creates a
+new page draft; copying an existing section gives it a new title and path.
+A `●` dot marks sections that have a saved content draft. Clicking a section
+loads its Markdown into the editor; if you have unsaved edits the GUI asks
+before discarding them.
+
+The **Archived sections** disclosure lists pages removed from navigation.
+Restore returns an archived page to its original group when possible. A
+separate **Delete permanently** action requires confirmation and is irreversible
+after publishing. Add, copy, reorder, archive, restore, and permanent deletion
+are all structural drafts: the rulebook working copy and public site remain
+unchanged until you explicitly publish. Archived pages are preserved outside
+`docs/` in the rulebook repository, so they are not built into the public site.
 
 The main panel has three tabs:
 
@@ -45,9 +57,9 @@ The main panel has three tabs:
   "unsaved edits — click Save draft". **Save draft** stores it on the backend
   only (`backend/drafts/`, per workspace); the public site cannot see it yet.
   A yellow DRAFT banner reminds you of this, and an empty draft is refused.
-- **Diff** — unified diff of every draft against the published files,
-  line-by-line, colour-coded. **Refresh** re-fetches it. Nothing is live until
-  you publish.
+- **Diff** — structural draft summaries plus unified diffs of content drafts
+  against the published files, line-by-line and colour-coded. **Refresh**
+  re-fetches it. Nothing is live until you publish.
 - **Result** — the step log of the last publish or rollback: `[ok]/[FAIL]`
   lines for validate → stage → build → commit → push → live, then the resulting
   version, commit hash and live URL (cache-busted). Failures show the plain-
@@ -70,10 +82,11 @@ on:
 
 ## The safe workflow: edit → diff → publish → verify → rollback
 
-1. **Edit.** Pick a section, change the Markdown, **Save draft**. It exists
-   only on the backend; the live site is untouched.
-2. **Diff.** Open the Diff tab and read it line by line — this is exactly what
-   will change.
+1. **Edit or manage sections.** Save Markdown drafts, or add/copy/reorder/
+   archive/restore sections. These changes exist only as backend drafts; the
+   live site is untouched.
+2. **Diff.** Open the Diff tab and review both the structure summary and
+   content changes — this is what will change.
 3. **Publish.** Click **Publish to live site** and confirm. One run validates
    (all nav sections present, non-empty, `mkdocs build --strict` clean),
    applies the drafts, bumps the version (`v1.0` → `v1.1`), stamps it into
@@ -86,6 +99,11 @@ on:
 5. **Rollback** (if needed). **Rollback last publish** reverts the most recent
    publish commit the same way — rebuild, push, wait — and the footer shows the
    previous version again.
+
+If a publish or rollback commit succeeds locally but its push or live-site check
+fails, the GUI shows a pending retry in Diff and enables the matching action.
+Confirming it retries the same commit; it does not create another publish or
+rollback commit.
 
 ## Don'ts
 

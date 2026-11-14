@@ -467,6 +467,10 @@ def cmd_show(args: argparse.Namespace) -> None:
 
 def cmd_edit(args: argparse.Namespace) -> None:
     data = _call("GET", "/api/sections")
+    pending = data.get("pending_publish")
+    if pending:
+        action = "rollback" if pending.get("action") == "rollback" else "publish"
+        raise FredError(f"a {action} retry is pending; finish it before editing sections")
     section = _find_section(data["sections"], args.section)
     editor = os.environ.get("VISUAL") or os.environ.get("EDITOR")
     if not editor:
@@ -474,10 +478,11 @@ def cmd_edit(args: argparse.Namespace) -> None:
 
     handle = tempfile.NamedTemporaryFile(
         "w", suffix=".md", prefix=f"fred-{section['id']}-", delete=False, encoding="utf-8")
+    path = Path(handle.name)
+    keep_file = False
     try:
         handle.write(section["content"])
         handle.close()
-        path = Path(handle.name)
         print(f"DRAFT — editing {section['title']} ({section['id']})")
         print("The public site will not change until you run:  fred publish")
         try:
@@ -485,23 +490,39 @@ def cmd_edit(args: argparse.Namespace) -> None:
         except FileNotFoundError:
             raise FredError(f"editor not found: {editor}") from None
         edited = path.read_text(encoding="utf-8")
+        if edited == section["content"]:
+            print("no changes — no draft saved")
+            return
+        try:
+            result = _call("PUT", f"/api/draft/{section['id']}", {"content": edited})
+        except FredError:
+            keep_file = True
+            print(f"draft save failed; your edits were preserved at: {path}")
+            raise
+        print(f"draft saved for {section['id']} ({result['bytes']} bytes, {result['drafts']} draft(s) open)")
+        print("Review with:  fred diff      Publish with:  fred publish")
     finally:
-        Path(handle.name).unlink(missing_ok=True)
-
-    if edited == section["content"]:
-        print("no changes — no draft saved")
-        return
-    result = _call("PUT", f"/api/draft/{section['id']}", {"content": edited})
-    print(f"draft saved for {section['id']} ({result['bytes']} bytes, {result['drafts']} draft(s) open)")
-    print("Review with:  fred diff      Publish with:  fred publish")
+        if not keep_file:
+            path.unlink(missing_ok=True)
 
 
 def cmd_diff(args: argparse.Namespace) -> None:
     data = _call("GET", "/api/diff")
     entries = [entry for entry in data["entries"] if entry["changed"]]
-    if not entries:
+    structure = data.get("structure") or {}
+    structure_summary = structure.get("summary") or []
+    pending = data.get("pending_publish")
+    if not entries and not structure.get("changed") and not pending:
         print("no drafts — the working copy matches the published rulebook")
         return
+    if pending:
+        action = "rollback" if pending.get("action") == "rollback" else "publish"
+        print(f"{action} retry pending: commit {pending.get('commit')} · version {pending.get('version')}")
+        print(f"run the {action} action to retry the push and live verification")
+    if structure.get("changed"):
+        print("section structure drafts:")
+        for item in structure_summary:
+            print(f"  - {item}")
     for entry in entries:
         text = entry["diff"].rstrip("\n")
         if sys.stdout.isatty():
@@ -516,7 +537,8 @@ def cmd_diff(args: argparse.Namespace) -> None:
                     print(line)
         else:
             print(text)
-    print(f"\n{data['added']} added, {data['removed']} removed (draft vs published)")
+    if entries:
+        print(f"\n{data['added']} added, {data['removed']} removed (content draft vs published)")
 
 
 def cmd_publish(args: argparse.Namespace) -> None:
@@ -539,6 +561,21 @@ def cmd_rollback(args: argparse.Namespace) -> None:
     if not result.get("ok"):
         raise FredError(result.get("error") or "rollback failed")
     print(f"rolled back to {result['version']} (commit {result['commit']})")
+
+
+def cmd_recover(args: argparse.Namespace) -> None:
+    status = _call("GET", "/api/status")
+    if not status.get("recovery_required"):
+        print("no interrupted publish staging needs recovery")
+        return
+    if not sys.stdin.isatty():
+        raise FredError("recovery needs confirmation; run `fred recover` in an interactive terminal")
+    print("This restores the saved pre-publish files and discards later changes to those rulebook files.")
+    if _ask("Type RESTORE to continue", "") != "RESTORE":
+        print("recovery cancelled")
+        return
+    result = _call("POST", "/api/recovery/restore", {"confirm": "RESTORE"})
+    print(result.get("detail") or "interrupted publish staging restored")
 
 
 # --------------------------------------------------------------------------- herdr layout
@@ -673,6 +710,8 @@ HUB_MENU = [
     ("6", "Publish drafts to the live site"),
     ("7", "Roll back the last publish"),
     ("8", "Workspaces: switch, NEW rules directory, copy, add, remove"),
+    ("9", "Manage sections: add, copy, reorder, archive, restore, delete"),
+    ("10", "Recover interrupted publish staging"),
     ("q", "Quit this pane"),
 ]
 
@@ -681,16 +720,17 @@ def _ns(**kwargs) -> argparse.Namespace:
     return argparse.Namespace(**kwargs)
 
 
-def _hub_header() -> None:
+def _hub_header() -> bool:
     try:
         data = _call("GET", "/api/status")
     except FredError as exc:
         print(f"  {exc}")
-        return
+        return False
     workspace = data.get("workspace") or {}
     clean = "clean" if data["git"]["clean"] else "UNCOMMITTED changes"
     print(f"  {workspace.get('title') or 'no workspace'}   version {data['version']}")
     print(f"  drafts {data['drafts']['count']}   working copy {clean}   branch {data['git']['branch']}")
+    return bool(data.get("recovery_required"))
 
 
 def _pick_section() -> str:
@@ -707,6 +747,138 @@ def _pick_section() -> str:
 
 def _confirm(question: str) -> bool:
     return _ask(f"{question} Type yes to continue", "").lower() in {"y", "yes"}
+
+
+def _section_groups() -> dict:
+    data = _call("GET", "/api/sections")
+    return {
+        "sections": data.get("sections") or [],
+        "archived": data.get("archived") or [],
+    }
+
+
+def _print_section_group(label: str, sections: list[dict]) -> None:
+    print(f"\n{label}:")
+    if not sections:
+        print("  (none)")
+        return
+    for index, section in enumerate(sections, 1):
+        title = section.get("title") or "?"
+        section_id = section.get("id") or "?"
+        path = section.get("path") or "?"
+        print(f"  {index:>2}  {title}  [{section_id}]  docs/{path}")
+
+
+def _select_section_ids(sections: list[dict], prompt: str, multiple: bool = True) -> list[str]:
+    if not sections:
+        print("no sections available")
+        return []
+    raw = _ask(prompt, "")
+    if not raw:
+        return []
+    choices = [part.strip() for part in raw.split(",")]
+    if not multiple and len(choices) != 1:
+        print("choose one number")
+        return []
+    if any(not choice.isdigit() for choice in choices):
+        print("enter listed numbers separated by commas")
+        return []
+    indexes = [int(choice) for choice in choices]
+    if any(index < 1 or index > len(sections) for index in indexes):
+        print("not a listed number")
+        return []
+    if len(set(indexes)) != len(indexes):
+        print("do not repeat a number")
+        return []
+    return [str(sections[index - 1]["id"]) for index in indexes]
+
+
+def _section_management_menu() -> None:
+    while True:
+        data = _section_groups()
+        pending = data.get("pending_publish")
+        if pending:
+            action = "rollback" if pending.get("action") == "rollback" else "publish"
+            raise FredError(f"a {action} retry is pending; finish it before managing sections")
+        print("\nSection management")
+        _print_section_group("Active sections", data["sections"])
+        _print_section_group("Archived sections", data["archived"])
+        print("\n  1  Add section   2  Copy section   3  Reorder active sections")
+        print("  4  Archive active sections   5  Restore archived sections")
+        print("  6  Permanently delete archived sections   q  Back to overview")
+        choice = _ask("sections>", "").lower()
+        if choice in {"q", "quit", "back"}:
+            return
+        if not choice:
+            continue
+
+        active = data["sections"]
+        archived = data["archived"]
+        if choice == "1":
+            title = _ask("title", "")
+            path = _ask("path under docs (e.g. rules/new-section.md)", "")
+            if not title or not path:
+                print("cancelled — title and path are required")
+                continue
+            _call("POST", "/api/sections", {"title": title, "path": path})
+            print("section saved as a backend draft; it will not be public until publish")
+        elif choice == "2":
+            _print_section_group("Choose an active section to copy", active)
+            selected = _select_section_ids(active, "source number (blank cancels)", multiple=False)
+            if not selected:
+                continue
+            title = _ask("new title", "")
+            path = _ask("new path under docs (e.g. rules/new-section.md)", "")
+            if not title or not path:
+                print("cancelled — title and path are required")
+                continue
+            _call("POST", "/api/sections", {
+                "title": title,
+                "path": path,
+                "copy_from": selected[0],
+            })
+            print("section copy saved as a backend draft; it will not be public until publish")
+        elif choice == "3":
+            _print_section_group("Current order — enter every number in the desired order", active)
+            ids = _select_section_ids(active, "new order (comma-separated numbers; blank cancels)")
+            if not ids:
+                continue
+            if len(ids) != len(active):
+                print("reorder cancelled — include every active section exactly once")
+                continue
+            _call("PUT", "/api/sections/order", {"ids": ids})
+            print("section order saved as a backend draft; it will not be public until publish")
+        elif choice == "4":
+            _print_section_group("Choose active sections to archive", active)
+            ids = _select_section_ids(active, "numbers to archive (comma-separated; blank cancels)")
+            if ids and _confirm(f"Archive {len(ids)} section(s)?"):
+                _call("POST", "/api/sections/archive", {"ids": ids})
+                print("archive saved as a backend draft; it will not be public until publish")
+            elif ids:
+                print("archive cancelled")
+        elif choice == "5":
+            _print_section_group("Choose archived sections to restore", archived)
+            ids = _select_section_ids(archived, "numbers to restore (comma-separated; blank cancels)")
+            if ids and _confirm(f"Restore {len(ids)} section(s) to the active list?"):
+                _call("POST", "/api/sections/restore", {"ids": ids})
+                print("restore saved as a backend draft; it will not be public until publish")
+            elif ids:
+                print("restore cancelled")
+        elif choice == "6":
+            _print_section_group("Choose archived sections to permanently delete", archived)
+            ids = _select_section_ids(
+                archived, "numbers to delete permanently (comma-separated; blank cancels)"
+            )
+            question = f"Permanently delete {len(ids)} archived section(s)? This cannot be undone."
+            if ids and _confirm(question):
+                _call("DELETE", "/api/sections", {"ids": ids})
+                print("permanent deletion saved as a backend draft; it will not be public until publish")
+            elif ids:
+                print("permanent deletion cancelled")
+        else:
+            print("unknown choice")
+            continue
+        _pause()
 
 
 def _hub_action(choice: str) -> bool:
@@ -738,6 +910,11 @@ def _hub_action(choice: str) -> bool:
     elif choice == "8":
         _workspace_menu()
         return False
+    elif choice == "9":
+        _section_management_menu()
+        return False
+    elif choice == "10":
+        cmd_recover(_ns())
     else:
         print("unknown choice")
     return True
@@ -752,9 +929,11 @@ def _hub() -> None:
             pass
         print("Fred Lobster race rules")
         print("-----------------------")
-        _hub_header()
+        recovery_needed = _hub_header()
         print()
         for key, label in HUB_MENU:
+            if key == "10" and not recovery_needed:
+                continue
             print(f"  {key}  {label}")
         try:
             choice = input("\nfred> ").strip().lower()
@@ -957,6 +1136,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     rollback = sub.add_parser("rollback", help="restore the previous published version")
     rollback.set_defaults(func=cmd_rollback)
+
+    recover = sub.add_parser("recover", help="restore files after an interrupted publish staging transaction")
+    recover.set_defaults(func=cmd_recover)
 
     workspace = sub.add_parser(
         "workspace",

@@ -22,15 +22,44 @@
   </header>
 
   <div id="status" class="status">loading status…</div>
+  <div id="recovery-banner" class="banner hidden" role="alert">
+    <strong>Interrupted publish staging needs recovery.</strong>
+    Review the situation before restoring the pre-publish files; this discards later working-copy edits in those files.
+    <button id="btn-recovery-restore" class="danger" type="button">Restore pre-publish files</button>
+  </div>
 
   <main>
-    <aside>
-      <h2>Sections</h2>
+    <aside id="section-sidebar">
+      <div class="section-head">
+        <h2>Sections</h2>
+        <button id="btn-add-section" class="primary" type="button">Add section</button>
+      </div>
+      <label class="section-search">Search sections
+        <input id="section-search" type="search" placeholder="Title or path" autocomplete="off">
+      </label>
+      <label class="section-filter">Show
+        <select id="section-filter">
+          <option value="all">All active sections</option>
+          <option value="drafts">Drafts only</option>
+        </select>
+      </label>
+      <div class="bulk-actions" aria-label="Selected section actions">
+        <span id="selection-count" class="muted" aria-live="polite">0 selected</span>
+        <button id="btn-copy-sections" class="secondary" type="button" disabled>Copy selected</button>
+        <button id="btn-archive-sections" class="secondary" type="button" disabled>Archive selected</button>
+        <button id="btn-move-up" class="secondary" type="button" disabled aria-label="Move selected section up">↑</button>
+        <button id="btn-move-down" class="secondary" type="button" disabled aria-label="Move selected section down">↓</button>
+      </div>
       <ul id="sections"></ul>
+      <details class="archive-list">
+        <summary>Archived sections <span id="archive-count" class="muted"></span></summary>
+        <ul id="archived-sections"></ul>
+      </details>
     </aside>
 
     <section class="panel">
       <div class="tabs">
+        <button id="btn-toggle-sections" class="tab section-toggle" type="button" aria-expanded="false" aria-controls="section-sidebar">Sections</button>
         <button class="tab active" data-tab="editor">Editor</button>
         <button class="tab" data-tab="diff">Diff</button>
         <button class="tab" data-tab="log">Result</button>
@@ -138,6 +167,57 @@
           <div id="ws-forget-list" class="ws-list compact"></div>
         </section>
       </div>
+    </div>
+  </div>
+
+  <div id="section-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="section-modal-title">
+    <div class="modal-card section-modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 id="section-modal-title">Add section</h2>
+          <p id="section-modal-description" class="hint">Create a structural draft. Nothing is published.</p>
+        </div>
+        <button id="btn-close-section-modal" class="icon" type="button" aria-label="Close section dialog">×</button>
+      </div>
+      <form id="section-form" class="modal-body stack">
+        <label>Title
+          <input id="new-section-title" required maxlength="160" autocomplete="off">
+        </label>
+        <label>Path <span class="hint">relative to docs/; include .md</span>
+          <input id="new-section-path" required autocomplete="off" spellcheck="false" placeholder="rules/new-section.md">
+        </label>
+        <label>Copy from <span class="hint">optional — copied content is used instead of the text below</span>
+          <select id="new-section-source">
+            <option value="">Start with blank content</option>
+          </select>
+        </label>
+        <label>Initial Markdown <span class="hint">optional</span>
+          <textarea id="new-section-content" rows="6" placeholder="# New section"></textarea>
+        </label>
+        <div class="form-actions">
+          <span id="section-form-hint" class="hint" aria-live="polite"></span>
+          <button type="submit" class="primary">Create section</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="copy-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="copy-modal-title">
+    <div class="modal-card section-modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 id="copy-modal-title">Copy selected sections</h2>
+          <p class="hint">Review the new title and path for each copy. Copies start as structural drafts.</p>
+        </div>
+        <button id="btn-close-copy-modal" class="icon" type="button" aria-label="Close copy dialog">×</button>
+      </div>
+      <form id="copy-form" class="modal-body stack">
+        <div id="copy-rows" class="copy-rows"></div>
+        <div class="form-actions">
+          <span id="copy-form-hint" class="hint" aria-live="polite"></span>
+          <button type="submit" class="primary">Create copies</button>
+        </div>
+      </form>
     </div>
   </div>
 

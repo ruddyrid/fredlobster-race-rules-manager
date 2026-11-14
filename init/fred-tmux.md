@@ -174,7 +174,20 @@ The overview pane shows the workspace, version, drafts and git state, then:
 | `6` | Publish drafts — only when the user asks; needs `yes` |
 | `7` | Roll back the last publish — only when the user asks; needs `yes` |
 | `8` | Workspaces: switch, new rules directory (`n`), copy (`c`), add (`a`), remove (`r`) |
+| `9` | Section management: add, copy, reorder, archive, restore, permanently delete |
+| `10` | Recover interrupted publish staging — requires typing `RESTORE` |
 | `q` | Quit the menu |
+
+Section management lists active and archived sections. Add/copy ask for a title
+and path under `docs/`; archive, restore, and permanent delete require
+confirmation, and deletion is limited to archived sections. Structural changes
+are backend-only drafts until an explicitly requested publish. Permanent deletion
+cannot be undone after publish. The existing publish (`6`) and rollback (`7`)
+confirmations remain in place.
+
+Recovery (`10`) is only offered when a previous publish stopped during staging.
+It restores the saved pre-publish working-copy files and preserves backend drafts;
+the user must type `RESTORE`.
 
 Setup never presses `6` or `7`.
 
@@ -187,7 +200,7 @@ herdr pane read <log-id> --source recent-unwrapped --lines 30
 ```
 
 Expect the overview to show the menu header (workspace, version, drafts, git)
-with items 1–8 and q, and the log to show `fredlobster-backend` journal lines.
+with items 1–10 and q, and the log to show `fredlobster-backend` journal lines.
 Focus stays on the editor pane. Only three panes exist in the tab.
 
 ## Do not

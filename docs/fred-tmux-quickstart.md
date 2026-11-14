@@ -100,7 +100,33 @@ overview (right) or log (below).
 | `6` | Publish drafts | Confirmation `Publish all drafts to the live site? Type yes to continue` (`yes`/`y`; anything else prints `publish cancelled`) |
 | `7` | Roll back the last publish | Confirmation `Roll back the last publish on the live site? Type yes to continue`; cancel prints `rollback cancelled` |
 | `8` | Workspaces | Opens the workspace submenu (see below); returns without a pause |
+| `9` | Manage sections | Opens the section-management submenu (see below); returns without a pause |
+| `10` | Recover interrupted publish staging | Only shown when recovery is needed; asks you to type `RESTORE` |
 | `q` | Quit this pane | Menu exits; the overview pane returns to its shell |
+
+### Section management (9)
+
+The submenu lists active and archived sections, then offers:
+
+| Key | Action | What it does |
+|---|---|---|
+| `1` | Add section | Prompts for a title and a path under `docs/`; submits a backend-only structural draft |
+| `2` | Copy section | Select an active source, then enter the new title and path; submits a backend-only draft |
+| `3` | Reorder active sections | Enter every listed number once, in the desired order |
+| `4` | Archive active sections | Select one or more active sections and confirm with `yes` |
+| `5` | Restore archived sections | Select one or more archived sections and confirm with `yes` |
+| `6` | Permanently delete archived sections | Select archived sections and confirm with `yes`; deletion takes effect on publish and cannot then be undone |
+| `q` | Back | Return to the numbered overview menu |
+
+All structural changes—including permanent deletion—remain backend-only drafts
+until an explicitly approved publish. Reviewing drafts with action `5` and
+publishing with action `6` are unchanged; publish and rollback retain their
+existing typed-`yes` confirmations. The standalone `fred sections` command lists
+active sections; the submenu also displays archived sections.
+
+Recovery (action `10`, or `fred recover`) is only needed after a process stops
+during publish staging. It restores the saved pre-publish files while keeping
+backend drafts available; review the warning and type `RESTORE` to proceed.
 
 ### Publish (6) — only with admin approval
 
